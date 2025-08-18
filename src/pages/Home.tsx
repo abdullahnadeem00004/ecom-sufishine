@@ -243,7 +243,7 @@ export default function Home() {
                     <span className="text-3xl font-bold text-primary">
                       PKR {featuredProduct.price.toFixed(2)}
                     </span>
-                    <Badge variant="secondary">Free Shipping</Badge>
+                    <Badge variant="secondary">PKR 200 Shipping</Badge>
                   </div>
 
                   <p className="text-muted-foreground">

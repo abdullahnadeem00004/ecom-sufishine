@@ -164,7 +164,7 @@ export default function ProductDetail() {
                 PKR {product.price.toFixed(2)}
               </div>
               <p className="text-sm text-muted-foreground">
-                Free shipping on orders over PKR 5000
+                PKR 200 shipping (+ PKR 50 per additional 4 products)
               </p>
             </div>
 
@@ -240,7 +240,7 @@ export default function ProductDetail() {
               <div className="flex items-center space-x-3">
                 <Truck className="h-5 w-5 text-primary" />
                 <span className="text-sm">
-                  Free shipping on orders over PKR 5000
+                  PKR 200 shipping (+ PKR 50 per additional 4 products)
                 </span>
               </div>
               <div className="flex items-center space-x-3">

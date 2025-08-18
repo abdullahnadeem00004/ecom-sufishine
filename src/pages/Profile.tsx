@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
-import { User, Edit, Save, X, Package, Heart, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from "react";
+import { User, Edit, Save, X, Package, Heart, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
   id: string;
@@ -19,17 +19,34 @@ interface Profile {
   avatar_url?: string;
 }
 
+interface OrderItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image_url?: string;
+}
+
+interface DeliveryAddress {
+  address: string;
+  city: string;
+  postalCode?: string;
+  country: string;
+}
+
 interface Order {
   id: number;
-  product_id: number;
-  quantity: number;
-  total_price: number;
+  customer_name: string;
+  email: string;
+  phone: string;
+  delivery_address: DeliveryAddress | string;
+  items: OrderItem[];
+  subtotal: number;
+  shipping_charge: number;
+  total: number;
   status: string;
+  payment_method: string;
   created_at: string;
-  products?: {
-    name: string;
-    image_url: string;
-  };
 }
 
 export default function Profile() {
@@ -39,45 +56,38 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    phone: '',
+    first_name: "",
+    last_name: "",
+    phone: "",
   });
-  
+
   const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchOrders();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== "PGRST116") {
         throw error;
       }
 
       setProfile(data);
       if (data) {
         setFormData({
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          phone: data.phone || '',
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          phone: data.phone || "",
         });
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error("Error fetching profile:", error);
       toast({
         title: "Error loading profile",
         description: "Please try again later.",
@@ -86,55 +96,49 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          products (
-            name,
-            image_url
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setOrders(data || []);
+      // For now, just set empty orders - will be implemented when database is updated
+      setOrders([]);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
+      setOrders([]);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchOrders();
+    }
+  }, [user, fetchProfile, fetchOrders]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          ...formData,
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        ...formData,
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) throw error;
 
       setProfile({ id: user.id, ...formData });
       setEditing(false);
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
       toast({
         title: "Error updating profile",
         description: "Please try again later.",
@@ -147,14 +151,14 @@ export default function Profile() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -228,9 +232,9 @@ export default function Profile() {
                         setEditing(false);
                         if (profile) {
                           setFormData({
-                            first_name: profile.first_name || '',
-                            last_name: profile.last_name || '',
-                            phone: profile.phone || '',
+                            first_name: profile.first_name || "",
+                            last_name: profile.last_name || "",
+                            phone: profile.phone || "",
                           });
                         }
                       }}
@@ -245,7 +249,7 @@ export default function Profile() {
                       className="btn-spiritual"
                     >
                       <Save className="mr-2 h-4 w-4" />
-                      {saving ? 'Saving...' : 'Save'}
+                      {saving ? "Saving..." : "Save"}
                     </Button>
                   </div>
                 )}
@@ -256,7 +260,7 @@ export default function Profile() {
                     <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
-                      value={user?.email || ''}
+                      value={user?.email || ""}
                       disabled
                       className="bg-muted"
                     />
@@ -264,13 +268,15 @@ export default function Profile() {
                       Email cannot be changed
                     </p>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="phone">Phone</Label>
                     <Input
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       disabled={!editing}
                       placeholder="Enter your phone number"
                     />
@@ -281,7 +287,9 @@ export default function Profile() {
                     <Input
                       id="firstName"
                       value={formData.first_name}
-                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, first_name: e.target.value })
+                      }
                       disabled={!editing}
                       placeholder="Enter your first name"
                     />
@@ -292,7 +300,9 @@ export default function Profile() {
                     <Input
                       id="lastName"
                       value={formData.last_name}
-                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, last_name: e.target.value })
+                      }
                       disabled={!editing}
                       placeholder="Enter your last name"
                     />
@@ -312,51 +322,101 @@ export default function Profile() {
                 {orders.length === 0 ? (
                   <div className="text-center py-8">
                     <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No orders yet</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      No orders yet
+                    </h3>
                     <p className="text-muted-foreground mb-4">
                       Start shopping to see your orders here
                     </p>
-                    <Button className="btn-spiritual">
-                      Browse Products
-                    </Button>
+                    <Button className="btn-spiritual">Browse Products</Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {orders.map((order, index) => (
                       <div key={order.id}>
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <img
-                              src={order.products?.image_url || '/placeholder.svg'}
-                              alt={order.products?.name || 'Product'}
-                              className="w-16 h-16 object-contain rounded-md"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder.svg';
-                              }}
-                            />
+                        <div className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-4">
                             <div>
-                              <h4 className="font-medium">
-                                {order.products?.name || 'Unknown Product'}
+                              <h4 className="font-semibold">
+                                Order #{order.id}
                               </h4>
                               <p className="text-sm text-muted-foreground">
-                                Quantity: {order.quantity}
+                                Ordered on{" "}
+                                {new Date(
+                                  order.created_at
+                                ).toLocaleDateString()}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                Ordered on {new Date(order.created_at).toLocaleDateString()}
+                                Payment:{" "}
+                                {order.payment_method
+                                  ?.replace("_", " ")
+                                  .toUpperCase()}
                               </p>
                             </div>
-                          </div>
-                          
-                          <div className="text-right space-y-2">
-                            <p className="font-semibold">
-                              ${order.total_price.toFixed(2)}
-                            </p>
                             <Badge className={getStatusColor(order.status)}>
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              {order.status.charAt(0).toUpperCase() +
+                                order.status.slice(1)}
                             </Badge>
                           </div>
+
+                          {/* Order Items */}
+                          <div className="space-y-2 mb-4">
+                            <h5 className="text-sm font-medium">Items:</h5>
+                            {Array.isArray(order.items) &&
+                              order.items.map((item, itemIndex) => (
+                                <div
+                                  key={itemIndex}
+                                  className="flex items-center space-x-3 p-2 bg-muted/30 rounded"
+                                >
+                                  <img
+                                    src={item.image_url || "/placeholder.svg"}
+                                    alt={item.name}
+                                    className="w-12 h-12 object-contain rounded"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src =
+                                        "/placeholder.svg";
+                                    }}
+                                  />
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">
+                                      {item.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Qty: {item.quantity} × PKR {item.price} =
+                                      PKR{" "}
+                                      {(item.quantity * item.price).toFixed(2)}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+
+                          {/* Order Summary */}
+                          <div className="border-t pt-3 space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span>Subtotal:</span>
+                              <span>
+                                PKR {order.subtotal?.toFixed(2) || "0.00"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span>Shipping:</span>
+                              <span>
+                                PKR{" "}
+                                {order.shipping_charge?.toFixed(2) || "0.00"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-semibold border-t pt-1">
+                              <span>Total:</span>
+                              <span>
+                                PKR {order.total?.toFixed(2) || "0.00"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        {index < orders.length - 1 && <Separator className="mt-4" />}
+                        {index < orders.length - 1 && (
+                          <Separator className="mt-4" />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -377,11 +437,19 @@ export default function Profile() {
                     <h3 className="text-lg font-medium mb-2">Preferences</h3>
                     <div className="space-y-2">
                       <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" defaultChecked />
+                        <input
+                          type="checkbox"
+                          className="rounded"
+                          defaultChecked
+                        />
                         <span className="text-sm">Email notifications</span>
                       </label>
                       <label className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" defaultChecked />
+                        <input
+                          type="checkbox"
+                          className="rounded"
+                          defaultChecked
+                        />
                         <span className="text-sm">Marketing updates</span>
                       </label>
                       <label className="flex items-center space-x-2">
@@ -394,12 +462,20 @@ export default function Profile() {
                   <Separator />
 
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Account Actions</h3>
+                    <h3 className="text-lg font-medium mb-2">
+                      Account Actions
+                    </h3>
                     <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                      >
                         Change Password
                       </Button>
-                      <Button variant="outline" className="w-full justify-start text-destructive">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-destructive"
+                      >
                         Delete Account
                       </Button>
                     </div>

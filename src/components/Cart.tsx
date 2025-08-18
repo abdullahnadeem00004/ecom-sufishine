@@ -16,6 +16,10 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  formatShippingBreakdown,
+  getShippingExplanation,
+} from "@/lib/shippingUtils";
 
 interface CartProps {
   trigger?: React.ReactNode;
@@ -23,8 +27,16 @@ interface CartProps {
 
 function Cart({ trigger }: CartProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { items, totalItems, totalPrice, updateQuantity, removeItem } =
-    useCart();
+  const {
+    items,
+    totalItems,
+    totalPrice,
+    updateQuantity,
+    removeItem,
+    getCartTotalWithShipping,
+    getShippingCharge,
+    shippingDetails,
+  } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -159,17 +171,27 @@ function Cart({ trigger }: CartProps) {
                 {/* Cart Summary */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Subtotal</span>
+                    <span>
+                      Subtotal ({shippingDetails.totalQuantity} items)
+                    </span>
                     <span>PKR {totalPrice.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Shipping</span>
-                    <span>Free</span>
+                    <span className="flex flex-col">
+                      <span>Shipping</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatShippingBreakdown(shippingDetails)}
+                      </span>
+                    </span>
+                    <span>PKR {getShippingCharge().toFixed(2)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground px-1">
+                    {getShippingExplanation()}
                   </div>
                   <Separator />
                   <div className="flex justify-between text-base font-semibold">
                     <span>Total</span>
-                    <span>PKR {totalPrice.toFixed(2)}</span>
+                    <span>PKR {getCartTotalWithShipping().toFixed(2)}</span>
                   </div>
                 </div>
 

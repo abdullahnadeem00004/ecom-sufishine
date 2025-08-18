@@ -15,6 +15,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
+  formatShippingBreakdown,
+  getShippingExplanation,
+} from "@/lib/shippingUtils";
+import {
   ShoppingBag,
   CreditCard,
   Truck,
@@ -46,7 +50,14 @@ const checkoutSchema = z.object({
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 const Checkout: React.FC = (): JSX.Element => {
-  const { items, clearCart, getCartTotal } = useCart();
+  const {
+    items,
+    clearCart,
+    getCartTotal,
+    getCartTotalWithShipping,
+    getShippingCharge,
+    shippingDetails,
+  } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -143,7 +154,9 @@ const Checkout: React.FC = (): JSX.Element => {
           phone: data.phone,
         },
         address: delivery_address,
-        total: getCartTotal(),
+        subtotal: getCartTotal(),
+        shipping_charge: getShippingCharge(),
+        total: getCartTotalWithShipping(),
         paymentMethod: data.paymentMethod,
         status: "pending",
         timestamp: new Date().toISOString(),
@@ -171,6 +184,9 @@ const Checkout: React.FC = (): JSX.Element => {
           guest_name: !user ? `${data.firstName} ${data.lastName}` : null,
           guest_email: !user ? data.email : null,
           guest_phone: !user ? data.phone : null,
+          customer_name: `${data.firstName} ${data.lastName}`,
+          customer_email: data.email,
+          customer_phone: data.phone,
           items: JSON.stringify(
             items.map((item) => ({
               id: item.id,
@@ -181,14 +197,11 @@ const Checkout: React.FC = (): JSX.Element => {
               subtotal: item.price * item.quantity,
             }))
           ),
-          total_amount: getCartTotal(),
+          total_amount: getCartTotalWithShipping(),
+          shipping_charge: getShippingCharge(),
           status: "pending",
           payment_method: data.paymentMethod,
           shipping_address: JSON.stringify(delivery_address),
-          // Store customer info for both guest and registered users
-          customer_name: `${data.firstName} ${data.lastName}`,
-          customer_email: data.email,
-          customer_phone: data.phone,
         };
 
         console.log("Attempting to save order:", {
@@ -197,10 +210,7 @@ const Checkout: React.FC = (): JSX.Element => {
           orderData: dbOrderData,
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: insertResult, error: insertError } = await (
-          supabase as any
-        )
+        const { data: insertResult, error: insertError } = await supabase
           .from("guest_orders")
           .insert(dbOrderData)
           .select()
@@ -794,12 +804,22 @@ const Checkout: React.FC = (): JSX.Element => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span>Subtotal:</span>
+                        <span>
+                          Subtotal ({shippingDetails.totalQuantity} items):
+                        </span>
                         <span>PKR {getCartTotal().toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Shipping:</span>
-                        <span>Free</span>
+                        <span className="flex items-center gap-1">
+                          Shipping:
+                          <span className="text-xs text-muted-foreground">
+                            ({formatShippingBreakdown(shippingDetails)})
+                          </span>
+                        </span>
+                        <span>PKR {getShippingCharge().toFixed(2)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {getShippingExplanation()}
                       </div>
                       <div className="flex justify-between">
                         <span>Tax:</span>
@@ -808,7 +828,7 @@ const Checkout: React.FC = (): JSX.Element => {
                       <Separator />
                       <div className="flex justify-between text-lg font-bold">
                         <span>Total:</span>
-                        <span>PKR {getCartTotal().toFixed(2)}</span>
+                        <span>PKR {getCartTotalWithShipping().toFixed(2)}</span>
                       </div>
                     </div>
 
