@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Sufi Shine Design System - Inspired by Sufism and organic purity */
+
+@layer base {
+  :root {
+    /* Pure white background for purity */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    /* Card backgrounds */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    /* Popover styling */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    /* Primary green - Forest green #228B22 */
+    --primary: 120 61% 34%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 120 61% 44%;
+
+    /* Secondary olive green #556B2F */
+    --secondary: 82 39% 30%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted tones for subtle elements */
+    --muted: 120 10% 95%;
+    --muted-foreground: 120 5% 45%;
+
+    /* Gold accents for highlights #DAA520 */
+    --accent: 43 77% 49%;
+    --accent-foreground: 0 0% 0%;
+
+    /* Destructive states */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 120 10% 90%;
+    --input: 120 10% 95%;
+    --ring: 120 61% 34%;
+
+    /* Spiritual gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(120 61% 34%), hsl(120 61% 44%));
+    --gradient-spiritual: linear-gradient(180deg, hsl(0 0% 100%), hsl(120 10% 98%));
+    --gradient-gold: linear-gradient(135deg, hsl(43 77% 49%), hsl(43 87% 59%));
+
+    /* Elegant shadows */
+    --shadow-glow: 0 0 20px hsl(120 61% 34% / 0.2);
+    --shadow-spiritual: 0 10px 30px -10px hsl(120 61% 34% / 0.15);
+
+    /* Smooth transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Sufi Shine maintains light theme for purity - dark mode disabled */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 120 61% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 82 39% 30%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 120 10% 95%;
+    --muted-foreground: 120 5% 45%;
+    --accent: 43 77% 49%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 120 10% 90%;
+    --input: 120 10% 95%;
+    --ring: 120 61% 34%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium;
+  }
+
+  .font-script {
+    font-family: 'Dancing Script', cursive;
+  }
+}
+
+@layer components {
+  /* Sufi-inspired animations */
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  .hover-glow {
+    transition: var(--transition-smooth);
+  }
+
+  .hover-glow:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+
+  .spiritual-pattern {
+    background-image: 
+      radial-gradient(circle at 25% 25%, hsl(120 10% 98%) 2px, transparent 2px),
+      radial-gradient(circle at 75% 75%, hsl(120 10% 98%) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .btn-spiritual {
+    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground 
+           hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 
+           transition-all duration-300 rounded-lg font-medium;
+  }
+
+  .btn-gold {
+    @apply bg-gradient-to-r from-accent to-yellow-400 text-accent-foreground 
+           hover:shadow-lg hover:shadow-accent/25 hover:-translate-y-0.5 
+           transition-all duration-300 rounded-lg font-medium;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 5px hsl(120 61% 34% / 0.2);
+  }
+  to {
+    box-shadow: 0 0 20px hsl(120 61% 34% / 0.4);
+  }
+}
