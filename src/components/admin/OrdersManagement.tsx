@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import {
@@ -47,6 +48,8 @@ interface Order {
   shipping_charge: number;
   status: string;
   payment_method: string;
+  payment_status: string;
+  transaction_id: string | null;
   created_at: string;
 }
 
@@ -54,6 +57,7 @@ export default function OrdersManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -153,6 +157,55 @@ export default function OrdersManagement() {
     }
   };
 
+  const getPaymentStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-orange-100 text-orange-800";
+      case "completed":
+      case "verified":
+        return "bg-green-100 text-green-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const updatePaymentStatus = async (orderId: number, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("guest_orders")
+        .update({ payment_status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      // Update the local orders state
+      setOrders(
+        orders.map((order) =>
+          order.id === orderId ? { ...order, payment_status: newStatus } : order
+        )
+      );
+
+      // Update selected order if it's the same order
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, payment_status: newStatus });
+      }
+
+      toast({
+        title: "Success",
+        description: "Payment status updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update payment status",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -191,7 +244,9 @@ export default function OrdersManagement() {
                     <TableHead>Subtotal</TableHead>
                     <TableHead>Shipping</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead>Payment</TableHead>
+                    <TableHead>Payment Method</TableHead>
+                    <TableHead>Payment Status</TableHead>
+                    <TableHead>Transaction ID</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Actions</TableHead>
@@ -243,6 +298,21 @@ export default function OrdersManagement() {
                             ?.replace("_", " ")
                             .toUpperCase() || "N/A"}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={getPaymentStatusBadgeColor(
+                            order.payment_status
+                          )}
+                          variant="secondary"
+                        >
+                          {order.payment_status?.toUpperCase() || "PENDING"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[100px] truncate font-mono text-xs">
+                          {order.transaction_id || "N/A"}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusBadgeColor(order.status)}>
@@ -327,6 +397,79 @@ export default function OrdersManagement() {
                   ) : (
                     <p>{String(selectedOrder.shipping_address)}</p>
                   )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-2">Payment Information</h4>
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p>
+                      <strong>Payment Method:</strong>{" "}
+                      {selectedOrder.payment_method
+                        ?.replace("_", " ")
+                        .toUpperCase()}
+                    </p>
+                    <p>
+                      <strong>Payment Status:</strong>
+                      <Badge
+                        className={`ml-2 ${getPaymentStatusBadgeColor(
+                          selectedOrder.payment_status
+                        )}`}
+                        variant="secondary"
+                      >
+                        {selectedOrder.payment_status?.toUpperCase() ||
+                          "PENDING"}
+                      </Badge>
+                    </p>
+                    {selectedOrder.transaction_id && (
+                      <p>
+                        <strong>Transaction ID:</strong>{" "}
+                        <code className="bg-muted px-1 rounded text-xs">
+                          {selectedOrder.transaction_id}
+                        </code>
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <p>
+                      <strong>Update Payment Status:</strong>
+                    </p>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          updatePaymentStatus(selectedOrder.id, "verified")
+                        }
+                        className="bg-green-50 hover:bg-green-100"
+                      >
+                        Mark Verified
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          updatePaymentStatus(selectedOrder.id, "pending")
+                        }
+                        className="bg-orange-50 hover:bg-orange-100"
+                      >
+                        Mark Pending
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          updatePaymentStatus(selectedOrder.id, "failed")
+                        }
+                        className="bg-red-50 hover:bg-red-100"
+                      >
+                        Mark Failed
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
