@@ -1,60 +1,80 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Leaf, Heart, Shield, Users, Award, Globe } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SocialLinks } from "@/components/ui/SocialLinks";
+import {
+  Leaf,
+  Heart,
+  Shield,
+  Users,
+  Award,
+  Globe,
+  Instagram,
+  Facebook,
+  MessageCircle,
+  MapPin,
+  Phone,
+  Mail,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
 const values = [
   {
     icon: Leaf,
-    title: 'Organic Purity',
-    description: 'We source only the finest organic ingredients, ensuring every drop is pure and natural.'
+    title: "Organic Purity",
+    description:
+      "We source only the finest organic ingredients, ensuring every drop is pure and natural.",
   },
   {
     icon: Heart,
-    title: 'Spiritual Harmony',
-    description: 'Inspired by Sufi traditions of inner peace and natural beauty that radiates from within.'
+    title: "Spiritual Harmony",
+    description:
+      "Inspired by Sufi traditions of inner peace and natural beauty that radiates from within.",
   },
   {
     icon: Shield,
-    title: 'Ethical Sourcing',
-    description: 'Our ingredients are ethically sourced, supporting local communities and sustainable practices.'
+    title: "Ethical Sourcing",
+    description:
+      "Our ingredients are ethically sourced, supporting local communities and sustainable practices.",
   },
   {
     icon: Users,
-    title: 'Community Care',
-    description: 'We believe in giving back to the communities that provide us with these precious natural gifts.'
+    title: "Community Care",
+    description:
+      "We believe in giving back to the communities that provide us with these precious natural gifts.",
   },
   {
     icon: Award,
-    title: 'Quality Promise',
-    description: 'Every product is crafted with meticulous care and tested to meet our highest standards.'
+    title: "Quality Promise",
+    description:
+      "Every product is crafted with meticulous care and tested to meet our highest standards.",
   },
   {
     icon: Globe,
-    title: 'Global Impact',
-    description: 'Making a positive impact on both personal beauty and environmental sustainability.'
+    title: "Global Impact",
+    description:
+      "Making a positive impact on both personal beauty and environmental sustainability.",
   },
 ];
 
 const teamMembers = [
   {
-    name: 'Aaliya Rahman',
-    role: 'Founder & CEO',
-    bio: 'A spiritual seeker and natural beauty enthusiast who founded Sufi Shine to share the wisdom of organic hair care.',
-    image: '/placeholder.svg'
+    name: "Aaliya Rahman",
+    role: "Founder & CEO",
+    bio: "A spiritual seeker and natural beauty enthusiast who founded Sufi Shine to share the wisdom of organic hair care.",
+    image: "/placeholder.svg",
   },
   {
-    name: 'Dr. Safiya Hassan',
-    role: 'Head of Product Development',
-    bio: 'With 15 years in organic chemistry, Dr. Hassan ensures every formula meets our purity standards.',
-    image: '/placeholder.svg'
+    name: "Dr. Safiya Hassan",
+    role: "Head of Product Development",
+    bio: "With 15 years in organic chemistry, Dr. Hassan ensures every formula meets our purity standards.",
+    image: "/placeholder.svg",
   },
   {
-    name: 'Omar Al-Mansouri',
-    role: 'Sustainability Director',
-    bio: 'Dedicated to maintaining our ethical sourcing and environmental responsibility commitments.',
-    image: '/placeholder.svg'
+    name: "Omar Al-Mansouri",
+    role: "Sustainability Director",
+    bio: "Dedicated to maintaining our ethical sourcing and environmental responsibility commitments.",
+    image: "/placeholder.svg",
   },
 ];
 
@@ -72,8 +92,9 @@ export default function About() {
               About <span className="font-script text-primary">Sufi Shine</span>
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Born from the essence of purity and spiritual harmony, Sufi Shine brings you 
-              organic hair care inspired by ancient wisdom and modern science.
+              Born from the essence of purity and spiritual harmony, Sufi Shine
+              brings you organic hair care inspired by ancient wisdom and modern
+              science.
             </p>
           </div>
         </div>
@@ -88,35 +109,41 @@ export default function About() {
                 <h2 className="text-3xl font-bold">Our Journey</h2>
                 <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
                   <p>
-                    Sufi Shine was born from a deeply personal journey of discovering the 
-                    transformative power of natural ingredients and spiritual practices. 
-                    Our founder, inspired by the mystical traditions of Sufism, sought to 
-                    create hair care products that nourish not just the hair, but the soul.
+                    Sufi Shine was born from a deeply personal journey of
+                    discovering the transformative power of natural ingredients
+                    and spiritual practices. Our founder, inspired by the
+                    mystical traditions of Sufism, sought to create hair care
+                    products that nourish not just the hair, but the soul.
                   </p>
                   <p>
-                    We believe that true beauty comes from within – from harmony between 
-                    body, mind, and spirit. This philosophy guides everything we do, from 
-                    sourcing our organic ingredients to crafting each bottle with mindful intention.
+                    We believe that true beauty comes from within – from harmony
+                    between body, mind, and spirit. This philosophy guides
+                    everything we do, from sourcing our organic ingredients to
+                    crafting each bottle with mindful intention.
                   </p>
                   <p>
-                    Every drop of Sufi Shine Organic Hair Oil carries this intention: 
-                    to help you shine with the pure radiance that comes from embracing 
-                    nature's gifts and your own inner light.
+                    Every drop of Sufi Shine Organic Hair Oil carries this
+                    intention: to help you shine with the pure radiance that
+                    comes from embracing nature's gifts and your own inner
+                    light.
                   </p>
                 </div>
               </div>
-              
+
               <div className="relative animate-float">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-3xl"></div>
                 <div className="relative bg-gradient-to-br from-muted/30 to-muted/50 rounded-3xl p-8 text-center">
                   <div className="text-6xl mb-4">🌿</div>
-                  <h3 className="text-2xl font-bold text-primary mb-2">Our Mission</h3>
+                  <h3 className="text-2xl font-bold text-primary mb-2">
+                    Our Mission
+                  </h3>
                   <p className="text-lg text-muted-foreground font-script">
                     "Shine with Purity"
                   </p>
                   <p className="mt-4 text-muted-foreground">
-                    To empower individuals to embrace their natural beauty through 
-                    organic hair care products that honor both tradition and innovation.
+                    To empower individuals to embrace their natural beauty
+                    through organic hair care products that honor both tradition
+                    and innovation.
                   </p>
                 </div>
               </div>
@@ -131,7 +158,8 @@ export default function About() {
           <div className="text-center mb-12 animate-fade-in">
             <h2 className="text-3xl font-bold mb-4">Our Values</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              The principles that guide our journey and inspire everything we create
+              The principles that guide our journey and inspire everything we
+              create
             </p>
           </div>
 
@@ -159,7 +187,8 @@ export default function About() {
           <div className="text-center mb-12 animate-fade-in">
             <h2 className="text-3xl font-bold mb-4">Meet Our Team</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              The passionate individuals behind Sufi Shine's commitment to organic purity
+              The passionate individuals behind Sufi Shine's commitment to
+              organic purity
             </p>
           </div>
 
@@ -198,10 +227,14 @@ export default function About() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             {[
-              { icon: '🌿', label: '100% Organic', desc: 'USDA Certified' },
-              { icon: '🐰', label: 'Cruelty-Free', desc: 'Never Tested' },
-              { icon: '♻️', label: 'Eco-Friendly', desc: 'Sustainable Packaging' },
-              { icon: '✨', label: 'Pure & Natural', desc: 'No Chemicals' },
+              { icon: "🌿", label: "100% Organic", desc: "USDA Certified" },
+              { icon: "🐰", label: "Cruelty-Free", desc: "Never Tested" },
+              {
+                icon: "♻️",
+                label: "Eco-Friendly",
+                desc: "Sustainable Packaging",
+              },
+              { icon: "✨", label: "Pure & Natural", desc: "No Chemicals" },
             ].map((cert, index) => (
               <div key={index} className="text-center space-y-2">
                 <div className="text-4xl">{cert.icon}</div>
@@ -213,25 +246,99 @@ export default function About() {
         </div>
       </section>
 
+      {/* Connect With Us Section */}
+      <section className="py-16 bg-background">
+        <div className="container px-4">
+          <div className="text-center mb-12 animate-fade-in">
+            <h2 className="text-3xl font-bold mb-4">Connect With Us</h2>
+            <p className="text-xl text-muted-foreground">
+              Join our community and stay updated with our latest products and
+              tips
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Social Media */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6 text-center space-y-4">
+                <h3 className="text-xl font-semibold">Follow Our Journey</h3>
+                <p className="text-muted-foreground">
+                  Get inspired by beauty tips, customer stories, and
+                  behind-the-scenes content
+                </p>
+                <div className="flex justify-center">
+                  <SocialLinks size="lg" className="justify-center" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contact Information */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6 space-y-4">
+                <h3 className="text-xl font-semibold text-center">
+                  Get in Touch
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
+                    <span className="text-muted-foreground">
+                      Model Town, Gujranwala, Pakistan
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-5 w-5 text-primary flex-shrink-0" />
+                    <a
+                      href={`https://wa.me/923041146524?text=${encodeURIComponent(
+                        "Hello! I am interested in SUFI SHINE products."
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      +92 304 1146524
+                    </a>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Mail className="h-5 w-5 text-primary flex-shrink-0" />
+                    <a
+                      href="mailto:info.sufishine@gmail.com"
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      info.sufishine@gmail.com
+                    </a>
+                  </div>
+                </div>
+                <div className="pt-4 text-center">
+                  <Button asChild className="btn-spiritual">
+                    <Link to="/contact">Visit Contact Page</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
         <div className="container px-4 text-center">
           <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
             <h2 className="text-3xl font-bold">Ready to Begin Your Journey?</h2>
             <p className="text-xl opacity-90">
-              Experience the transformative power of Sufi Shine and discover 
+              Experience the transformative power of Sufi Shine and discover
               your hair's natural radiance.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="btn-gold">
-                <Link to="/shop">
-                  Shop Now
-                </Link>
+                <Link to="/shop">Shop Now</Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="text-primary-foreground border-primary-foreground hover:bg-primary-foreground hover:text-primary">
-                <Link to="/contact">
-                  Contact Us
-                </Link>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="text-primary-foreground border-primary-foreground hover:bg-primary-foreground hover:text-primary"
+              >
+                <Link to="/contact">Contact Us</Link>
               </Button>
             </div>
           </div>

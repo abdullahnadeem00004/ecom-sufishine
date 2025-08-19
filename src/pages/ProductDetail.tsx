@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
 import { Reviews } from "@/components/Reviews";
 
@@ -25,6 +26,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { products, loading } = useProducts();
   const { addItem, clearCart } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
 
@@ -77,6 +79,27 @@ export default function ProductDetail() {
 
     // Navigate to checkout
     navigate("/checkout");
+  };
+
+  const handleToggleFavorite = () => {
+    if (!product) return;
+
+    toggleFavorite({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url,
+    });
+
+    const isCurrentlyFavorite = isFavorite(product.id);
+    toast({
+      title: isCurrentlyFavorite
+        ? "Removed from wishlist"
+        : "Added to wishlist",
+      description: isCurrentlyFavorite
+        ? `${product.name} has been removed from your wishlist.`
+        : `${product.name} has been added to your wishlist.`,
+    });
   };
 
   if (loading) {
@@ -229,9 +252,20 @@ export default function ProductDetail() {
                 <ShoppingCart className="mr-2 h-5 w-5" />
                 Add to Cart
               </Button>
-              <Button variant="outline" className="w-full" size="lg">
-                <Heart className="mr-2 h-5 w-5" />
-                Add to Wishlist
+              <Button
+                variant="outline"
+                className="w-full"
+                size="lg"
+                onClick={handleToggleFavorite}
+              >
+                <Heart
+                  className={`mr-2 h-5 w-5 ${
+                    isFavorite(product.id) ? "fill-red-500 text-red-500" : ""
+                  }`}
+                />
+                {isFavorite(product.id)
+                  ? "Remove from Wishlist"
+                  : "Add to Wishlist"}
               </Button>
             </div>
 

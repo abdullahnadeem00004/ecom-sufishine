@@ -195,7 +195,6 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      console.log("Starting Google sign in...");
       const { error } = await signInWithGoogle();
 
       if (error) {
@@ -207,7 +206,6 @@ export default function Auth() {
           variant: "destructive",
         });
       } else {
-        console.log("Google sign in initiated successfully");
         // The user will be redirected to Google, so we don't need to show success message here
       }
     } catch (error) {

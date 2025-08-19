@@ -10,33 +10,43 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  Send,
+  MessageSquare,
+  Instagram,
+  Facebook,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SocialLinks } from "@/components/ui/SocialLinks";
 
 const contactInfo = [
   {
     icon: Mail,
     title: "Email Us",
-    value: "info@sufishine.com",
+    value: "info.sufishine@gmail.com",
     description: "Send us an email anytime",
   },
   {
     icon: Phone,
     title: "Call Us",
-    value: "+1-123-456-7890",
-    description: "Mon-Fri, 9AM-6PM EST",
+    value: "+92 304 1146524",
+    description: "Mon-Fri, 9AM-6PM PKT",
   },
   {
     icon: MapPin,
     title: "Visit Us",
-    value: "123 Spiritual Lane\nPeaceful City, PC 12345",
+    value: "Model Town\nGujranwala, Pakistan",
     description: "Our headquarters",
   },
   {
     icon: Clock,
     title: "Business Hours",
     value: "Mon-Fri: 9AM-6PM\nSat: 10AM-4PM",
-    description: "Eastern Standard Time",
+    description: "Pakistan Standard Time",
   },
 ];
 
@@ -127,7 +137,7 @@ export default function Contact() {
       toast({
         title: "Something went wrong",
         description:
-          "Please try again or contact us directly at info@sufishine.com",
+          "Please try again or contact us directly at info.sufishine@gmail.com",
         variant: "destructive",
       });
     } finally {
@@ -191,15 +201,22 @@ export default function Contact() {
               ))}
             </div>
 
-            {/* Map Placeholder */}
             <Card className="overflow-hidden border-0 shadow-md">
-              <div className="h-48 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+              <div className="h-48 bg-gradient-to-br from-primary/10 to-accent/10 flex flex-col items-center justify-center space-y-4">
                 <div className="text-center space-y-2">
                   <MapPin className="h-8 w-8 text-primary mx-auto" />
                   <p className="text-sm font-medium">Our Location</p>
                   <p className="text-xs text-muted-foreground">
-                    Visit our peaceful headquarters
+                    Visit our headquarters in Model Town, Gujranwala
                   </p>
+                </div>
+
+                {/* Social Media Links */}
+                <div className="text-center space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Connect with us
+                  </p>
+                  <SocialLinks size="sm" className="justify-center" />
                 </div>
               </div>
             </Card>

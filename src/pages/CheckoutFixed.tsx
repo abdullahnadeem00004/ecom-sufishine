@@ -214,15 +214,7 @@ const Checkout: React.FC = (): JSX.Element => {
         };
 
         await supabase.from("guest_orders").insert(dbOrderData);
-        console.log("Order saved to database successfully");
-      } catch (dbError) {
-        console.log(
-          "Database save failed, but order is stored locally:",
-          dbError
-        );
-      }
-
-      console.log("Order created successfully:", orderId);
+      } catch (dbError) {}
 
       toast({
         title: "Order Placed Successfully!",
@@ -397,45 +389,56 @@ const Checkout: React.FC = (): JSX.Element => {
                 </div>
               )}
 
-              <div className="flex justify-center mb-8">
-                <div className="flex items-center space-x-4">
-                  <div
-                    className={`flex items-center ${
-                      currentStep === "shipping" ||
-                      currentStep === "payment" ||
-                      currentStep === "review"
-                        ? "text-green-600"
-                        : ""
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center">
-                      <Truck className="h-4 w-4" />
+              {/* Progress Steps - Ultra Compact Mobile Design */}
+              <div className="mb-4 sm:mb-8">
+                <div className="overflow-x-auto pb-2 scrollbar-hide">
+                  <div className="flex items-center space-x-1 sm:space-x-4 min-w-max px-2 sm:px-0 sm:justify-center">
+                    <div
+                      className={`flex items-center ${
+                        currentStep === "shipping" ||
+                        currentStep === "payment" ||
+                        currentStep === "review"
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      <div className="w-4 h-4 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center">
+                        <Truck className="h-2 w-2 sm:h-4 sm:w-4" />
+                      </div>
+                      <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium whitespace-nowrap">
+                        Ship
+                      </span>
                     </div>
-                    <span className="ml-2">Shipping</span>
-                  </div>
-                  <div className="w-16 h-0.5 bg-gray-200" />
-                  <div
-                    className={`flex items-center ${
-                      currentStep === "payment" || currentStep === "review"
-                        ? "text-green-600"
-                        : ""
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center">
-                      <CreditCard className="h-4 w-4" />
+                    <div className="w-3 sm:w-16 h-0.5 bg-gray-200" />
+                    <div
+                      className={`flex items-center ${
+                        currentStep === "payment" || currentStep === "review"
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      <div className="w-4 h-4 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center">
+                        <CreditCard className="h-2 w-2 sm:h-4 sm:w-4" />
+                      </div>
+                      <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium whitespace-nowrap">
+                        Pay
+                      </span>
                     </div>
-                    <span className="ml-2">Payment</span>
-                  </div>
-                  <div className="w-16 h-0.5 bg-gray-200" />
-                  <div
-                    className={`flex items-center ${
-                      currentStep === "review" ? "text-green-600" : ""
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center">
-                      <ShieldCheck className="h-4 w-4" />
+                    <div className="w-3 sm:w-16 h-0.5 bg-gray-200" />
+                    <div
+                      className={`flex items-center ${
+                        currentStep === "review"
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      <div className="w-4 h-4 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center">
+                        <ShieldCheck className="h-2 w-2 sm:h-4 sm:w-4" />
+                      </div>
+                      <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium whitespace-nowrap">
+                        Done
+                      </span>
                     </div>
-                    <span className="ml-2">Review</span>
                   </div>
                 </div>
               </div>

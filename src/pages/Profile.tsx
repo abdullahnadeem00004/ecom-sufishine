@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, Edit, Save, X, Package, Heart, Settings } from "lucide-react";
+import {
+  User,
+  Edit,
+  Save,
+  X,
+  Package,
+  Heart,
+  Settings,
+  Truck,
+  ExternalLink,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
 
 interface Profile {
   id: string;
@@ -46,6 +57,12 @@ interface Order {
   total_amount: number;
   status: string;
   payment_method: string;
+  payment_status: string;
+  transaction_id: string | null;
+  tracking_id: string | null;
+  tracking_status: string | null;
+  delivery_notes: string | null;
+  shipped_at: string | null;
   created_at: string;
   // Additional fields for compatibility
   email?: string;
@@ -109,15 +126,15 @@ export default function Profile() {
     try {
       // Fetch orders for the logged-in user from the guest_orders table
       const { data, error } = await supabase
-        .from("guest_orders" as any)
+        .from("guest_orders")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("customer_email", user.email)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
       // Process the orders similar to the admin panel
-      const processedOrders = (data || []).map((order: any) => {
+      const processedOrders = (data || []).map((order) => {
         const parsedItems =
           typeof order.items === "string"
             ? JSON.parse(order.items)
@@ -127,7 +144,7 @@ export default function Profile() {
         const subtotal =
           order.subtotal ||
           parsedItems.reduce(
-            (sum: number, item: any) => sum + item.price * item.quantity,
+            (sum: number, item: OrderItem) => sum + item.price * item.quantity,
             0
           );
 
@@ -146,6 +163,12 @@ export default function Profile() {
           total_amount: order.total_amount,
           status: order.status || "pending",
           payment_method: order.payment_method || "cash_on_delivery",
+          payment_status: order.payment_status || "pending",
+          transaction_id: order.transaction_id || null,
+          tracking_id: order.tracking_id || null,
+          tracking_status: order.tracking_status || null,
+          delivery_notes: order.delivery_notes || null,
+          shipped_at: order.shipped_at || null,
           created_at: order.created_at,
           // Additional fields for backward compatibility
           email: order.customer_email,
@@ -208,13 +231,37 @@ export default function Profile() {
     switch (status.toLowerCase()) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "completed":
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "shipped":
+        return "bg-purple-100 text-purple-800";
+      case "delivered":
         return "bg-green-100 text-green-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "verified":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-orange-100 text-orange-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleTrackOrder = (trackingId: string) => {
+    window.open(
+      `https://www.tcsexpress.com/track/?consignmentNo=${trackingId}`,
+      "_blank"
+    );
   };
 
   if (loading) {
@@ -396,10 +443,12 @@ export default function Profile() {
                                 Order #{order.id}
                               </h4>
                               <p className="text-sm text-muted-foreground">
-                                Ordered on{" "}
-                                {new Date(
-                                  order.created_at
-                                ).toLocaleDateString()}
+                                {formatDistanceToNow(
+                                  new Date(order.created_at),
+                                  {
+                                    addSuffix: true,
+                                  }
+                                )}
                               </p>
                               <p className="text-sm text-muted-foreground">
                                 Payment:{" "}
@@ -408,11 +457,80 @@ export default function Profile() {
                                   .toUpperCase()}
                               </p>
                             </div>
-                            <Badge className={getStatusColor(order.status)}>
-                              {order.status.charAt(0).toUpperCase() +
-                                order.status.slice(1)}
-                            </Badge>
+                            <div className="flex flex-col gap-2">
+                              <Badge className={getStatusColor(order.status)}>
+                                {order.status.charAt(0).toUpperCase() +
+                                  order.status.slice(1)}
+                              </Badge>
+                              <Badge
+                                className={getPaymentStatusColor(
+                                  order.payment_status
+                                )}
+                                variant="outline"
+                              >
+                                {order.payment_status?.toUpperCase() ||
+                                  "PENDING"}
+                              </Badge>
+                            </div>
                           </div>
+
+                          {/* Tracking Information */}
+                          {order.tracking_id && (
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-semibold text-blue-800 flex items-center gap-2">
+                                    <Truck className="h-4 w-4" />
+                                    Tracking Information
+                                  </p>
+                                  <p className="text-sm text-blue-700 mt-1">
+                                    Tracking ID:{" "}
+                                    <span className="font-mono font-semibold">
+                                      {order.tracking_id}
+                                    </span>
+                                  </p>
+                                  <p className="text-sm text-blue-600">
+                                    Status:{" "}
+                                    <span className="font-semibold">
+                                      {order.tracking_status?.toUpperCase() ||
+                                        "SHIPPED"}
+                                    </span>
+                                  </p>
+                                </div>
+                                <Button
+                                  onClick={() =>
+                                    handleTrackOrder(order.tracking_id!)
+                                  }
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                  size="sm"
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  Track Order
+                                </Button>
+                              </div>
+                              {order.delivery_notes && (
+                                <div className="mt-3 pt-3 border-t border-blue-200">
+                                  <p className="text-sm text-blue-700">
+                                    <strong>Delivery Notes:</strong>{" "}
+                                    {order.delivery_notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Show tracking message for confirmed orders without tracking */}
+                          {order.status === "confirmed" &&
+                            !order.tracking_id && (
+                              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-4">
+                                <p className="text-sm text-yellow-800">
+                                  <strong>📦 Order Confirmed!</strong> Your
+                                  order is being prepared for shipment. Tracking
+                                  information will be available once your order
+                                  is dispatched.
+                                </p>
+                              </div>
+                            )}
 
                           {/* Order Items */}
                           <div className="space-y-2 mb-4">

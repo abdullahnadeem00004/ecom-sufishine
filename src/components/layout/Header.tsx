@@ -11,6 +11,7 @@ import {
   X,
   Heart,
   LogOut,
+  Package,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
 import SufiShineLogo from "@/components/ui/SufiShineLogo";
 import Cart from "@/components/Cart";
@@ -36,10 +38,12 @@ const navigationItems = [
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { totalItems } = useCart();
+  const { totalFavorites } = useFavorites();
   const { toast } = useToast();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -47,6 +51,11 @@ export function Header() {
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const handleMobileCartClick = () => {
+    setIsOpen(false); // Close mobile menu
+    setTimeout(() => setIsCartOpen(true), 100); // Open cart with small delay
   };
 
   const handleSignOut = async () => {
@@ -110,17 +119,48 @@ export function Header() {
         {/* Action Icons */}
         <div className="flex items-center space-x-4">
           {/* Search Icon - Mobile */}
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Search className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="md:hidden p-2">
+            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
-          {/* Wishlist */}
-          <Button variant="ghost" size="icon" className="hover-glow">
-            <Heart className="h-5 w-5" />
+          {/* Wishlist - Hidden on small mobile */}
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="hover-glow hidden xs:flex p-2 relative"
+            title="Wishlist"
+          >
+            <Link to="/favorites">
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+              {totalFavorites > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -right-1 -top-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs"
+                >
+                  {totalFavorites > 9 ? "9+" : totalFavorites}
+                </Badge>
+              )}
+            </Link>
           </Button>
+
+          {/* My Orders - Only visible for logged in users */}
+          {user && (
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="hover-glow hidden sm:flex p-2"
+              title="My Orders"
+            >
+              <Link to="/orders">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Link>
+            </Button>
+          )}
 
           {/* Cart */}
-          <Cart />
+          <Cart isOpen={isCartOpen} onOpenChange={setIsCartOpen} />
 
           {/* User Account */}
           {user ? (
@@ -141,7 +181,7 @@ export function Header() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/profile">My Orders</Link>
+                  <Link to="/orders">My Orders</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/profile">Profile Settings</Link>
@@ -213,8 +253,31 @@ export function Header() {
                         {user.email}
                       </Button>
                       <Button
+                        asChild
                         variant="outline"
                         className="w-full justify-start"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Link to="/orders">
+                          <Package className="mr-2 h-4 w-4" />
+                          My Orders
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Link to="/favorites">
+                          <Heart className="mr-2 h-4 w-4" />
+                          My Wishlist ({totalFavorites})
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={handleMobileCartClick}
                       >
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Cart ({totalItems})
@@ -243,6 +306,7 @@ export function Header() {
                       <Button
                         variant="outline"
                         className="w-full justify-start"
+                        onClick={handleMobileCartClick}
                       >
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Cart ({totalItems})

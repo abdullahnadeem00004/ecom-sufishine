@@ -87,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    console.log("Attempting Google sign in...");
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -99,8 +98,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         },
       });
-
-      console.log("Google sign in response:", { data, error });
 
       if (error) {
         console.error("Google sign in error:", error);

@@ -81,17 +81,6 @@ const AdminDashboard = () => {
             reviews.length
           : 0;
 
-        console.log("Dashboard stats calculated:", {
-          guestOrdersRevenue,
-          oldOrdersRevenue,
-          totalRevenue,
-          totalOrders,
-          totalUsers,
-          avgRating,
-          guestOrdersCount: guestOrders?.length || 0,
-          oldOrdersCount: oldOrders?.length || 0,
-        });
-
         setStats({
           totalRevenue,
           totalOrders,

@@ -108,7 +108,7 @@ const Checkout: React.FC = (): JSX.Element => {
             if (profile.phone) form.setValue("phone", profile.phone);
           }
         } catch (error) {
-          console.log("Could not fetch user profile:", error);
+          // Could not fetch user profile
         }
       }
     };
@@ -249,12 +249,6 @@ const Checkout: React.FC = (): JSX.Element => {
           shipping_address: JSON.stringify(delivery_address),
         };
 
-        console.log("Attempting to save order:", {
-          isUser: !!user,
-          userId: user?.id,
-          orderData: dbOrderData,
-        });
-
         const { data: insertResult, error: insertError } = await supabase
           .from("guest_orders")
           .insert(dbOrderData)
@@ -262,9 +256,6 @@ const Checkout: React.FC = (): JSX.Element => {
           .single();
 
         if (insertError) {
-          console.error("Database save failed:", insertError);
-          console.error("Insert data was:", dbOrderData);
-
           // Still proceed with success since localStorage worked
           toast({
             title: "Note",
@@ -273,13 +264,10 @@ const Checkout: React.FC = (): JSX.Element => {
             duration: 8000,
           });
         } else {
-          console.log("Order saved to database successfully:", insertResult);
           // Update the orderId to use the database-generated ID for consistency
           orderData.orderId = insertResult.order_number;
         }
       } catch (dbError) {
-        console.error("Failed to save order to database:", dbError);
-
         // Still proceed with success since localStorage worked
         toast({
           title: "Note",
@@ -288,8 +276,6 @@ const Checkout: React.FC = (): JSX.Element => {
           duration: 8000,
         });
       }
-
-      console.log("Order created successfully:", orderId);
 
       // Show payment instructions for specific payment methods
       if (data.paymentMethod === "jazzcash") {
@@ -477,32 +463,6 @@ const Checkout: React.FC = (): JSX.Element => {
                       <p className="font-semibold text-green-900">
                         Welcome back! Your order will be saved to your account.
                       </p>
-                      {/* Debug info */}
-                      <details className="mt-2 text-sm">
-                        <summary>Debug Info (click to expand)</summary>
-                        <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                          <p>User ID: {user.id}</p>
-                          <p>Email: {user.email}</p>
-                          <p>Current Step: {currentStep}</p>
-                          <p>
-                            Form Values:{" "}
-                            {JSON.stringify(
-                              {
-                                firstName: form.watch("firstName"),
-                                lastName: form.watch("lastName"),
-                                email: form.watch("email"),
-                                phone: form.watch("phone"),
-                                address: form.watch("address"),
-                                city: form.watch("city"),
-                                country: form.watch("country"),
-                                paymentMethod: form.watch("paymentMethod"),
-                              },
-                              null,
-                              2
-                            )}
-                          </p>
-                        </div>
-                      </details>
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -691,12 +651,6 @@ const Checkout: React.FC = (): JSX.Element => {
                             const hasErrors = shippingFields.some((field) => {
                               const value = form.getValues(field);
                               const isEmpty = !value || value.trim() === "";
-                              if (isEmpty) {
-                                console.log(
-                                  `Missing field: ${field}, value:`,
-                                  value
-                                );
-                              }
                               return isEmpty;
                             });
 
@@ -712,9 +666,6 @@ const Checkout: React.FC = (): JSX.Element => {
                               return;
                             }
 
-                            console.log(
-                              "All shipping fields valid, proceeding to payment"
-                            );
                             setCurrentStep("payment");
                           }}
                           className="w-full mt-4 bg-green-600 hover:bg-green-700"

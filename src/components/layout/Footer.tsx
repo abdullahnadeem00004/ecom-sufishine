@@ -2,16 +2,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-  Mail,
-  Phone,
-  MapPin,
-  Send,
-} from "lucide-react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
 import SufiShineLogo from "@/components/ui/SufiShineLogo";
+import { SocialLinks } from "@/components/ui/SocialLinks";
 
 const quickLinks = [
   { name: "About Us", href: "/about" },
@@ -51,20 +44,7 @@ export function Footer() {
             </p>
 
             {/* Social Media */}
-            <div className="flex space-x-4">
-              <Button variant="outline" size="icon" className="hover-glow">
-                <Instagram className="h-4 w-4" />
-                <span className="sr-only">Instagram</span>
-              </Button>
-              <Button variant="outline" size="icon" className="hover-glow">
-                <Facebook className="h-4 w-4" />
-                <span className="sr-only">Facebook</span>
-              </Button>
-              <Button variant="outline" size="icon" className="hover-glow">
-                <Twitter className="h-4 w-4" />
-                <span className="sr-only">Twitter</span>
-              </Button>
-            </div>
+            <SocialLinks size="md" />
           </div>
 
           {/* Quick Links */}
@@ -109,18 +89,27 @@ export function Footer() {
             <div className="space-y-2">
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>info@sufishine.com</span>
+                <span>info.sufishine@gmail.com</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span>+1-123-456-7890</span>
+                <a
+                  href={`https://wa.me/923041146524?text=${encodeURIComponent(
+                    "Hello! I am interested in SUFI SHINE products."
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  +92 304 1146524
+                </a>
               </div>
               <div className="flex items-start space-x-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 mt-0.5" />
                 <span>
-                  123 Spiritual Lane
+                  Model Town
                   <br />
-                  Peaceful City, PC 12345
+                  Gujranwala, Pakistan
                 </span>
               </div>
             </div>
@@ -152,7 +141,7 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
           <p className="text-sm text-muted-foreground">
-            © 2024 SUFI SHINE. All rights reserved. Crafted with spiritual care.
+            © 2025 SUFI SHINE. All rights reserved. Crafted with spiritual care.
           </p>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <span>🌿 100% Organic</span>

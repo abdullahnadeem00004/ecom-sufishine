@@ -23,10 +23,14 @@ import {
 
 interface CartProps {
   trigger?: React.ReactNode;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-function Cart({ trigger }: CartProps) {
-  const [isOpen, setIsOpen] = useState(false);
+function Cart({ trigger, isOpen: externalIsOpen, onOpenChange }: CartProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = onOpenChange || setInternalIsOpen;
   const {
     items,
     totalItems,
@@ -59,40 +63,46 @@ function Cart({ trigger }: CartProps) {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         {trigger || (
-          <Button variant="ghost" size="icon" className="relative hover-glow">
-            <ShoppingBag className="h-5 w-5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative hover-glow p-2"
+          >
+            <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
             {totalItems > 0 && (
               <Badge
                 variant="destructive"
-                className="absolute -right-2 -top-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                className="absolute -right-1 -top-1 sm:-right-2 sm:-top-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center text-xs"
               >
-                {totalItems}
+                {totalItems > 99 ? "99+" : totalItems}
               </Badge>
             )}
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col">
         <SheetHeader>
-          <SheetTitle>Shopping Cart</SheetTitle>
-          <SheetDescription>
+          <SheetTitle className="text-lg sm:text-xl">Shopping Cart</SheetTitle>
+          <SheetDescription className="text-sm sm:text-base">
             {totalItems > 0
               ? `${totalItems} item${totalItems !== 1 ? "s" : ""} in your cart`
               : "Your cart is empty"}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col h-full pt-6">
+        <div className="flex flex-col flex-1 pt-4 sm:pt-6">
           {items.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
-              <p className="text-muted-foreground mb-4">
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+              <ShoppingBag className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold mb-2">
+                Your cart is empty
+              </h3>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4">
                 Add some products to get started
               </p>
               <Button
                 onClick={() => setIsOpen(false)}
-                className="btn-spiritual"
+                className="btn-spiritual text-sm sm:text-base px-6"
               >
                 Continue Shopping
               </Button>
@@ -100,83 +110,85 @@ function Cart({ trigger }: CartProps) {
           ) : (
             <>
               {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto space-y-4">
+              <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 px-1">
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center space-x-4 p-4 border rounded-lg"
+                    className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 border rounded-lg"
                   >
                     <img
                       src={item.image_url || "/placeholder.svg"}
                       alt={item.name}
-                      className="w-16 h-16 object-contain rounded-md"
+                      className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-md flex-shrink-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "/placeholder.svg";
                       }}
                     />
 
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">
+                      <h4 className="font-medium text-xs sm:text-sm truncate">
                         {item.name}
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         PKR {item.price.toFixed(2)} each
                       </p>
 
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity - 1)
-                          }
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="text-sm font-medium w-8 text-center">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
-                          }
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6 sm:h-8 sm:w-8"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                          >
+                            <Minus className="h-2 w-2 sm:h-3 sm:w-3" />
+                          </Button>
+                          <span className="text-xs sm:text-sm font-medium w-6 sm:w-8 text-center">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6 sm:h-8 sm:w-8"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
+                          >
+                            <Plus className="h-2 w-2 sm:h-3 sm:w-3" />
+                          </Button>
+                        </div>
 
-                    <div className="flex flex-col items-end space-y-2">
-                      <p className="font-semibold text-sm">
-                        PKR {(item.price * item.quantity).toFixed(2)}
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                        <div className="flex items-center space-x-2">
+                          <p className="font-semibold text-xs sm:text-sm">
+                            PKR {(item.price * item.quantity).toFixed(2)}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 sm:h-8 sm:w-8 text-destructive hover:text-destructive"
+                            onClick={() => removeItem(item.id)}
+                          >
+                            <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="border-t pt-4 space-y-4">
+              <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4 mt-3 sm:mt-4">
                 {/* Cart Summary */}
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs sm:text-sm">
                     <span>
                       Subtotal ({shippingDetails.totalQuantity} items)
                     </span>
                     <span>PKR {totalPrice.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs sm:text-sm">
                     <span className="flex flex-col">
                       <span>Shipping</span>
                       <span className="text-xs text-muted-foreground">
@@ -189,7 +201,7 @@ function Cart({ trigger }: CartProps) {
                     {getShippingExplanation()}
                   </div>
                   <Separator />
-                  <div className="flex justify-between text-base font-semibold">
+                  <div className="flex justify-between text-sm sm:text-base font-semibold">
                     <span>Total</span>
                     <span>PKR {getCartTotalWithShipping().toFixed(2)}</span>
                   </div>
@@ -213,16 +225,16 @@ function Cart({ trigger }: CartProps) {
                     </div>
                   )}
                   <Button
-                    className="w-full btn-spiritual"
+                    className="w-full btn-spiritual text-sm sm:text-base py-2 sm:py-3"
                     size="lg"
                     onClick={handleCheckout}
                   >
-                    <CreditCard className="mr-2 h-4 w-4" />
+                    <CreditCard className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     Proceed to Checkout
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full text-sm sm:text-base py-2 sm:py-3"
                     onClick={() => setIsOpen(false)}
                   >
                     Continue Shopping

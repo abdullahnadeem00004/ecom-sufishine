@@ -3,6 +3,9 @@ import { supabase } from "../../lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,
@@ -50,6 +53,10 @@ interface Order {
   payment_method: string;
   payment_status: string;
   transaction_id: string | null;
+  tracking_id: string | null;
+  tracking_status: string;
+  shipped_at: string | null;
+  delivery_notes: string | null;
   created_at: string;
 }
 
@@ -57,6 +64,8 @@ export default function OrdersManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [trackingIdInput, setTrackingIdInput] = useState("");
+  const [deliveryNotesInput, setDeliveryNotesInput] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -206,6 +215,100 @@ export default function OrdersManagement() {
     }
   };
 
+  const updateOrderStatus = async (orderId: number, newStatus: string) => {
+    try {
+      const updateData: Partial<Order> = { status: newStatus };
+
+      // If setting to shipped, also update tracking_status
+      if (newStatus === "shipped") {
+        updateData.tracking_status = "shipped";
+        updateData.shipped_at = new Date().toISOString();
+      } else if (newStatus === "delivered") {
+        updateData.tracking_status = "delivered";
+      }
+
+      const { error } = await supabase
+        .from("guest_orders")
+        .update(updateData)
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      // Update the local orders state
+      setOrders(
+        orders.map((order) =>
+          order.id === orderId ? { ...order, ...updateData } : order
+        )
+      );
+
+      // Update selected order if it's the same order
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, ...updateData });
+      }
+
+      toast({
+        title: "Success",
+        description: "Order status updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update order status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateTrackingId = async (
+    orderId: number,
+    trackingId: string,
+    deliveryNotes?: string
+  ) => {
+    try {
+      const updateData: Partial<Order> = {
+        tracking_id: trackingId,
+        tracking_status: "shipped",
+        shipped_at: new Date().toISOString(),
+      };
+
+      if (deliveryNotes) {
+        updateData.delivery_notes = deliveryNotes;
+      }
+
+      const { error } = await supabase
+        .from("guest_orders")
+        .update(updateData)
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      // Update the local orders state
+      setOrders(
+        orders.map((order) =>
+          order.id === orderId ? { ...order, ...updateData } : order
+        )
+      );
+
+      // Update selected order if it's the same order
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, ...updateData });
+      }
+
+      toast({
+        title: "Success",
+        description: "Tracking ID updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating tracking ID:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update tracking ID",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -247,6 +350,7 @@ export default function OrdersManagement() {
                     <TableHead>Payment Method</TableHead>
                     <TableHead>Payment Status</TableHead>
                     <TableHead>Transaction ID</TableHead>
+                    <TableHead>Tracking ID</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Actions</TableHead>
@@ -315,6 +419,28 @@ export default function OrdersManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <div className="max-w-[120px] truncate font-mono text-xs">
+                          {order.tracking_id ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-green-600">
+                                {order.tracking_id}
+                              </span>
+                              <a
+                                href={`https://www.tcsexpress.com/track/?consignmentNo=${order.tracking_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-500 hover:text-blue-700 text-xs"
+                                title="Track on TCS"
+                              >
+                                📦
+                              </a>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">No tracking</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <Badge className={getStatusBadgeColor(order.status)}>
                           {order.status?.toUpperCase() || "PENDING"}
                         </Badge>
@@ -328,7 +454,7 @@ export default function OrdersManagement() {
                         <Select
                           defaultValue={order.status}
                           onValueChange={(value) =>
-                            updateStatus(order.id, value)
+                            updateOrderStatus(order.id, value)
                           }
                         >
                           <SelectTrigger className="w-32">
@@ -469,6 +595,139 @@ export default function OrdersManagement() {
                         Mark Failed
                       </Button>
                     </div>
+                  </div>
+                </div>
+
+                {/* Tracking Information Section */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-3">Shipping & Tracking</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <p>
+                        <strong>Current Tracking ID:</strong>{" "}
+                        {selectedOrder.tracking_id ? (
+                          <div className="inline-flex items-center gap-2 mt-1">
+                            <code className="bg-muted px-2 py-1 rounded text-sm">
+                              {selectedOrder.tracking_id}
+                            </code>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                window.open(
+                                  `https://www.tcsexpress.com/track/?consignmentNo=${selectedOrder.tracking_id}`,
+                                  "_blank"
+                                )
+                              }
+                              className="h-6 px-2 text-xs"
+                            >
+                              Track on TCS 📦
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">
+                            No tracking ID set
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p>
+                        <strong>Tracking Status:</strong>{" "}
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            selectedOrder.tracking_status === "shipped"
+                              ? "bg-blue-100 text-blue-800"
+                              : selectedOrder.tracking_status === "delivered"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {selectedOrder.tracking_status?.toUpperCase() ||
+                            "PENDING"}
+                        </span>
+                      </p>
+                    </div>
+
+                    {selectedOrder.status === "confirmed" && (
+                      <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm font-medium text-blue-800">
+                          Order is confirmed - Ready to add tracking information
+                        </p>
+
+                        <div className="space-y-3">
+                          <div>
+                            <Label
+                              htmlFor="tracking-id"
+                              className="text-sm font-medium"
+                            >
+                              TCS Tracking ID / Consignment Number
+                            </Label>
+                            <Input
+                              id="tracking-id"
+                              value={trackingIdInput}
+                              onChange={(e) =>
+                                setTrackingIdInput(e.target.value)
+                              }
+                              placeholder="Enter TCS tracking number (e.g., TCS123456789)"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label
+                              htmlFor="delivery-notes"
+                              className="text-sm font-medium"
+                            >
+                              Delivery Notes (Optional)
+                            </Label>
+                            <Textarea
+                              id="delivery-notes"
+                              value={deliveryNotesInput}
+                              onChange={(e) =>
+                                setDeliveryNotesInput(e.target.value)
+                              }
+                              placeholder="Add any delivery instructions or notes..."
+                              className="mt-1"
+                              rows={3}
+                            />
+                          </div>
+                          <Button
+                            onClick={() => {
+                              if (trackingIdInput.trim()) {
+                                updateTrackingId(
+                                  selectedOrder.id,
+                                  trackingIdInput.trim(),
+                                  deliveryNotesInput.trim()
+                                );
+                                setTrackingIdInput("");
+                                setDeliveryNotesInput("");
+                              } else {
+                                toast({
+                                  title: "Error",
+                                  description: "Please enter a tracking ID",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className="w-full"
+                          >
+                            Add Tracking ID & Mark as Shipped
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedOrder.delivery_notes && (
+                      <div>
+                        <p>
+                          <strong>Delivery Notes:</strong>
+                        </p>
+                        <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
+                          {selectedOrder.delivery_notes}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
