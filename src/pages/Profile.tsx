@@ -37,16 +37,21 @@ interface DeliveryAddress {
 interface Order {
   id: number;
   customer_name: string;
-  email: string;
-  phone: string;
-  delivery_address: DeliveryAddress | string;
+  customer_email: string;
+  customer_phone: string;
+  shipping_address: DeliveryAddress | string;
   items: OrderItem[];
   subtotal: number;
   shipping_charge: number;
-  total: number;
+  total_amount: number;
   status: string;
   payment_method: string;
   created_at: string;
+  // Additional fields for compatibility
+  email?: string;
+  phone?: string;
+  delivery_address?: DeliveryAddress | string;
+  total?: number;
 }
 
 export default function Profile() {
@@ -102,8 +107,58 @@ export default function Profile() {
     if (!user) return;
 
     try {
-      // For now, just set empty orders - will be implemented when database is updated
-      setOrders([]);
+      // Fetch orders for the logged-in user from the guest_orders table
+      const { data, error } = await supabase
+        .from("guest_orders" as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Process the orders similar to the admin panel
+      const processedOrders = (data || []).map((order: any) => {
+        const parsedItems =
+          typeof order.items === "string"
+            ? JSON.parse(order.items)
+            : order.items || [];
+
+        // Calculate subtotal if not present
+        const subtotal =
+          order.subtotal ||
+          parsedItems.reduce(
+            (sum: number, item: any) => sum + item.price * item.quantity,
+            0
+          );
+
+        return {
+          id: order.id,
+          customer_name: order.customer_name,
+          customer_email: order.customer_email,
+          customer_phone: order.customer_phone,
+          shipping_address:
+            typeof order.shipping_address === "string"
+              ? JSON.parse(order.shipping_address)
+              : order.shipping_address || {},
+          items: parsedItems,
+          subtotal: subtotal,
+          shipping_charge: order.shipping_charge || 0,
+          total_amount: order.total_amount,
+          status: order.status || "pending",
+          payment_method: order.payment_method || "cash_on_delivery",
+          created_at: order.created_at,
+          // Additional fields for backward compatibility
+          email: order.customer_email,
+          phone: order.customer_phone,
+          delivery_address:
+            typeof order.shipping_address === "string"
+              ? JSON.parse(order.shipping_address)
+              : order.shipping_address || {},
+          total: order.total_amount,
+        };
+      });
+
+      setOrders(processedOrders);
     } catch (error) {
       console.error("Error fetching orders:", error);
       setOrders([]);
@@ -409,7 +464,10 @@ export default function Profile() {
                             <div className="flex justify-between font-semibold border-t pt-1">
                               <span>Total:</span>
                               <span>
-                                PKR {order.total?.toFixed(2) || "0.00"}
+                                PKR{" "}
+                                {(order.total_amount || order.total)?.toFixed(
+                                  2
+                                ) || "0.00"}
                               </span>
                             </div>
                           </div>
