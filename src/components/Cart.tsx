@@ -188,22 +188,15 @@ function Cart({ trigger, isOpen: externalIsOpen, onOpenChange }: CartProps) {
                     </span>
                     <span>PKR {totalPrice.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-xs sm:text-sm">
-                    <span className="flex flex-col">
-                      <span>Shipping</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatShippingBreakdown(shippingDetails)}
-                      </span>
-                    </span>
-                    <span>PKR {getShippingCharge().toFixed(2)}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground px-1">
-                    {getShippingExplanation()}
-                  </div>
+                  {/* Note: Shipping costs will be calculated during checkout based on payment method */}
                   <Separator />
                   <div className="flex justify-between text-sm sm:text-base font-semibold">
-                    <span>Total</span>
-                    <span>PKR {getCartTotalWithShipping().toFixed(2)}</span>
+                    <span>Subtotal</span>
+                    <span>PKR {totalPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground px-1">
+                    📦 Free shipping available with JazzCash, EasyPaisa & Bank
+                    Transfer
                   </div>
                 </div>
 

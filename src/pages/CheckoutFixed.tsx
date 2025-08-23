@@ -48,9 +48,12 @@ const checkoutSchema = z.object({
   city: z.string().min(1, "City is required"),
   postalCode: z.string(),
   country: z.string().min(1, "Country is required"),
-  paymentMethod: z.enum(["cash_on_delivery", "jazzcash", "easypaisa", "card"], {
-    required_error: "Please select a payment method",
-  }),
+  paymentMethod: z.enum(
+    ["cash_on_delivery", "jazzcash", "easypaisa", "bank_account"],
+    {
+      required_error: "Please select a payment method",
+    }
+  ),
   transactionId: z.string().optional(),
 });
 
@@ -95,7 +98,11 @@ const Checkout: React.FC = (): JSX.Element => {
   const transactionId = form.watch("transactionId");
 
   useEffect(() => {
-    if (paymentMethod === "jazzcash" || paymentMethod === "easypaisa") {
+    if (
+      paymentMethod === "jazzcash" ||
+      paymentMethod === "easypaisa" ||
+      paymentMethod === "bank_account"
+    ) {
       // Don't auto-show if transaction ID is already filled
       if (!transactionId) {
         // Add a small delay to prevent immediate trigger on form initialization
@@ -117,19 +124,11 @@ const Checkout: React.FC = (): JSX.Element => {
       return;
     }
 
-    if (data.paymentMethod === "card") {
-      toast({
-        title: "Card Payment",
-        description: "Card payment is not available yet.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // For jazzcash and easypaisa, show payment instructions first
+    // For manual payment methods, show payment instructions first
     if (
       (data.paymentMethod === "jazzcash" ||
-        data.paymentMethod === "easypaisa") &&
+        data.paymentMethod === "easypaisa" ||
+        data.paymentMethod === "bank_account") &&
       !data.transactionId
     ) {
       setShowPaymentInstructions(true);
@@ -172,7 +171,7 @@ const Checkout: React.FC = (): JSX.Element => {
         address: delivery_address,
         subtotal: getCartTotal(),
         shipping_charge: getShippingCharge(),
-        total: getCartTotalWithShipping(),
+        total: getCartTotalWithShipping(data.paymentMethod),
         paymentMethod: data.paymentMethod,
         status: "pending",
         timestamp: new Date().toISOString(),
@@ -203,8 +202,8 @@ const Checkout: React.FC = (): JSX.Element => {
           customer_email: data.email,
           customer_phone: data.phone,
           items: JSON.stringify(items),
-          total_amount: getCartTotalWithShipping(),
-          shipping_charge: getShippingCharge(),
+          total_amount: getCartTotalWithShipping(data.paymentMethod),
+          shipping_charge: getShippingCharge(data.paymentMethod),
           status: "pending",
           payment_method: data.paymentMethod,
           payment_status:
@@ -214,7 +213,10 @@ const Checkout: React.FC = (): JSX.Element => {
         };
 
         await supabase.from("guest_orders").insert(dbOrderData);
-      } catch (dbError) {}
+      } catch (dbError) {
+        // Non-blocking: order still placed locally; DB insert failure is tolerated here
+        console.warn("guest_orders insert failed", dbError);
+      }
 
       toast({
         title: "Order Placed Successfully!",
@@ -596,7 +598,7 @@ const Checkout: React.FC = (): JSX.Element => {
                                 | "cash_on_delivery"
                                 | "jazzcash"
                                 | "easypaisa"
-                                | "card"
+                                | "bank_account"
                             )
                           }
                           className="space-y-4"
@@ -685,14 +687,31 @@ const Checkout: React.FC = (): JSX.Element => {
 
                           <div>
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="card" id="card" disabled />
-                              <Label htmlFor="card" className="text-gray-400">
-                                Card Payment (Coming Soon)
+                              <RadioGroupItem
+                                value="bank_account"
+                                id="bank_account"
+                              />
+                              <Label htmlFor="bank_account">
+                                Bank Account (Bank Transfer)
                               </Label>
                             </div>
-                            {form.watch("paymentMethod") === "card" && (
-                              <div className="mt-2 p-3 bg-gray-100 rounded text-sm">
-                                Coming soon
+                            {form.watch("paymentMethod") === "bank_account" && (
+                              <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <p className="text-sm text-yellow-800 font-medium mb-2">
+                                  <CreditCard className="inline w-4 h-4 mr-1" />
+                                  Bank Transfer Selected
+                                </p>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    setShowPaymentInstructions(true)
+                                  }
+                                  className="text-yellow-700 border-yellow-200 hover:bg-yellow-50"
+                                >
+                                  View Bank Details & Steps
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -769,15 +788,46 @@ const Checkout: React.FC = (): JSX.Element => {
                           <div className="flex justify-between">
                             <span className="flex items-center gap-1">
                               Shipping:
-                              <span className="text-xs text-muted-foreground">
-                                ({formatShippingBreakdown(shippingDetails)})
-                              </span>
+                              {form.watch("paymentMethod") === "jazzcash" ||
+                              form.watch("paymentMethod") === "easypaisa" ||
+                              form.watch("paymentMethod") === "bank_account" ? (
+                                <span className="text-xs text-green-600 font-medium">
+                                  (FREE with{" "}
+                                  {form
+                                    .watch("paymentMethod")
+                                    ?.replace("_", " ")
+                                    .toUpperCase()}
+                                  )
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  ({formatShippingBreakdown(shippingDetails)})
+                                </span>
+                              )}
                             </span>
-                            <span>PKR {getShippingCharge().toFixed(2)}</span>
+                            <span>
+                              PKR{" "}
+                              {getShippingCharge(
+                                form.watch("paymentMethod")
+                              ).toFixed(2)}
+                            </span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {getShippingExplanation()}
-                          </div>
+                          {!(
+                            form.watch("paymentMethod") === "jazzcash" ||
+                            form.watch("paymentMethod") === "easypaisa" ||
+                            form.watch("paymentMethod") === "bank_account"
+                          ) && (
+                            <div className="text-xs text-muted-foreground">
+                              {getShippingExplanation()}
+                            </div>
+                          )}
+                          {(form.watch("paymentMethod") === "jazzcash" ||
+                            form.watch("paymentMethod") === "easypaisa" ||
+                            form.watch("paymentMethod") === "bank_account") && (
+                            <div className="text-xs text-green-600">
+                              🎉 Free shipping with digital payments!
+                            </div>
+                          )}
                           <div className="flex justify-between">
                             <span>Tax:</span>
                             <span>PKR 0.00</span>
@@ -786,7 +836,10 @@ const Checkout: React.FC = (): JSX.Element => {
                           <div className="flex justify-between text-lg font-bold">
                             <span>Total:</span>
                             <span>
-                              PKR {getCartTotalWithShipping().toFixed(2)}
+                              PKR{" "}
+                              {getCartTotalWithShipping(
+                                form.watch("paymentMethod")
+                              ).toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -863,10 +916,7 @@ const Checkout: React.FC = (): JSX.Element => {
                               </Button>
                               <Button
                                 type="submit"
-                                disabled={
-                                  loading ||
-                                  form.getValues("paymentMethod") === "card"
-                                }
+                                disabled={loading}
                                 className="flex-1 bg-green-600 hover:bg-green-700"
                               >
                                 {loading ? "Placing Order..." : "Place Order"}

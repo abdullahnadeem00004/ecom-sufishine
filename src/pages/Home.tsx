@@ -28,7 +28,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
 import { SocialLinks } from "@/components/ui/SocialLinks";
 import heroImage from "@/assets/hero-woman.jpg";
-import productImage from "@/assets/hair-oil-bottle.jpg";
+import productImage from "@/assets/hair-oil-bottle.png";
 
 const benefits = [
   {
@@ -107,7 +107,7 @@ const testimonials = [
 const featuredProduct = {
   id: 1,
   name: "Sufi Shine Organic Hair Oil",
-  price: 25.0,
+  price: 1300.0,
   description:
     "Our organic hair oil blends natural oils for ultimate shine and purity, inspired by ancient Sufi traditions of spiritual harmony and natural beauty.",
   image: productImage,
@@ -270,12 +270,6 @@ export default function Home() {
                     <span className="text-2xl sm:text-3xl font-bold text-primary">
                       PKR {featuredProduct.price.toFixed(2)}
                     </span>
-                    <Badge
-                      variant="secondary"
-                      className="text-xs sm:text-sm w-fit"
-                    >
-                      PKR 200 Shipping
-                    </Badge>
                   </div>
 
                   <p className="text-sm sm:text-base text-muted-foreground">

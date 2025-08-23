@@ -20,8 +20,8 @@ interface CartContextType {
   updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
   getCartTotal: () => number;
-  getCartTotalWithShipping: () => number;
-  getShippingCharge: () => number;
+  getCartTotalWithShipping: (paymentMethod?: string) => number;
+  getShippingCharge: (paymentMethod?: string) => number;
 }
 
 const CartContext = createContext<CartContextType>({
@@ -126,9 +126,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const shippingDetails = calculateShippingCharge(totalItems);
 
   const getCartTotal = () => totalPrice;
-  const getCartTotalWithShipping = () =>
-    totalPrice + shippingDetails.shippingCharge;
-  const getShippingCharge = () => shippingDetails.shippingCharge;
+  const getCartTotalWithShipping = (paymentMethod?: string) => {
+    const shippingCost = getShippingCharge(paymentMethod);
+    return totalPrice + shippingCost;
+  };
+  const getShippingCharge = (paymentMethod?: string) => {
+    // Free shipping for JazzCash, EasyPaisa, and Bank Account
+    if (
+      paymentMethod === "jazzcash" ||
+      paymentMethod === "easypaisa" ||
+      paymentMethod === "bank_account"
+    ) {
+      return 0;
+    }
+    return shippingDetails.shippingCharge;
+  };
 
   const value = {
     items,

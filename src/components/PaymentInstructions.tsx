@@ -17,6 +17,9 @@ interface PaymentAccount {
   account_title: string;
   account_number: string;
   account_type: string;
+  branch_name?: string;
+  swift_code?: string;
+  iban?: string;
 }
 
 export default function PaymentInstructions({
@@ -33,14 +36,22 @@ export default function PaymentInstructions({
   // Default account details (these will be fetched from database in production)
   const paymentAccounts: Record<string, PaymentAccount> = {
     jazzcash: {
-      account_title: "SUFI SHINE STORE",
+      account_title: "LUQMAN BIN RIZWAN",
       account_number: "03041146524",
       account_type: "JazzCash Mobile Wallet",
     },
     easypaisa: {
-      account_title: "SUFI SHINE STORE",
+      account_title: "LUQMAN BIN RIZWAN",
       account_number: "03391146524",
       account_type: "EasyPaisa Mobile Wallet",
+    },
+    bank_account: {
+      account_title: "SUFI SHINE",
+      account_number: "03311010050044",
+      account_type: "Bank Alfalah - Current Account",
+      branch_name: "Rail Bazar Gujranwala Branch",
+      swift_code: "ALFHPKKAXXX",
+      iban: "PK68ALFH033100101005004",
     },
   };
 
@@ -78,8 +89,12 @@ export default function PaymentInstructions({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              {paymentMethod === "jazzcash" ? "JazzCash" : "EasyPaisa"} Payment
-              Instructions
+              {paymentMethod === "jazzcash"
+                ? "JazzCash"
+                : paymentMethod === "easypaisa"
+                ? "EasyPaisa"
+                : "Bank Transfer"}{" "}
+              Payment Instructions
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -147,25 +162,122 @@ export default function PaymentInstructions({
                 </Label>
                 <p className="font-medium">{currentAccount.account_type}</p>
               </div>
+
+              {paymentMethod === "bank_account" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {currentAccount.branch_name && (
+                    <div className="flex justify-between items-center p-2 bg-background rounded border">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">
+                          Branch Name
+                        </Label>
+                        <p className="font-medium">
+                          {currentAccount.branch_name}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          copyToClipboard(
+                            currentAccount.branch_name!,
+                            "Branch Name"
+                          )
+                        }
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {currentAccount.swift_code && (
+                    <div className="flex justify-between items-center p-2 bg-background rounded border">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">
+                          SWIFT Code
+                        </Label>
+                        <p className="font-medium">
+                          {currentAccount.swift_code}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          copyToClipboard(
+                            currentAccount.swift_code!,
+                            "SWIFT Code"
+                          )
+                        }
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {currentAccount.iban && (
+                    <div className="flex justify-between items-center p-2 bg-background rounded border md:col-span-2">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">
+                          IBAN
+                        </Label>
+                        <p className="font-medium font-mono">
+                          {currentAccount.iban}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          copyToClipboard(currentAccount.iban!, "IBAN")
+                        }
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
               <h4 className="font-semibold">Steps to Complete Payment:</h4>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                <li>
-                  Open your{" "}
-                  {paymentMethod === "jazzcash" ? "JazzCash" : "EasyPaisa"} app
-                </li>
-                <li>Select "Send Money" or "Transfer Money"</li>
-                <li>
-                  Enter the account number:{" "}
-                  <strong>{currentAccount.account_number}</strong>
-                </li>
-                <li>Enter the exact amount shown in your order total</li>
-                <li>Complete the transaction</li>
-                <li>Copy the transaction ID from the success message</li>
-                <li>Enter the transaction ID below to confirm your payment</li>
-              </ol>
+              {paymentMethod === "bank_account" ? (
+                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>
+                    Use your bank app or visit your bank for an interbank
+                    transfer
+                  </li>
+                  <li>
+                    Enter IBAN: <strong>{currentAccount.iban}</strong> or
+                    Account No: <strong>{currentAccount.account_number}</strong>
+                  </li>
+                  <li>Account Title: {currentAccount.account_title}</li>
+                  <li>Add your Order ID in Reference/Remarks</li>
+                  <li>Transfer the exact total amount</li>
+                  <li>Save the Transaction/Reference ID after success</li>
+                  <li>
+                    Enter the Transaction ID below to confirm your payment
+                  </li>
+                </ol>
+              ) : (
+                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>
+                    Open your{" "}
+                    {paymentMethod === "jazzcash" ? "JazzCash" : "EasyPaisa"}{" "}
+                    app
+                  </li>
+                  <li>Select "Send Money" or "Transfer Money"</li>
+                  <li>
+                    Enter the account number:{" "}
+                    <strong>{currentAccount.account_number}</strong>
+                  </li>
+                  <li>Enter the exact amount shown in your order total</li>
+                  <li>Complete the transaction</li>
+                  <li>Copy the transaction ID from the success message</li>
+                  <li>
+                    Enter the transaction ID below to confirm your payment
+                  </li>
+                </ol>
+              )}
             </div>
 
             <Alert className="border-orange-200 bg-orange-50">
@@ -216,9 +328,11 @@ export default function PaymentInstructions({
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">
-                You can find this ID in your{" "}
-                {paymentMethod === "jazzcash" ? "JazzCash" : "EasyPaisa"} app
-                after successful payment
+                {paymentMethod === "bank_account"
+                  ? "This is the reference/transaction number provided by your bank after the transfer."
+                  : `You can find this ID in your ${
+                      paymentMethod === "jazzcash" ? "JazzCash" : "EasyPaisa"
+                    } app after successful payment`}
               </p>
             </div>
 

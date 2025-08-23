@@ -53,10 +53,25 @@ export default function Shop() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Products");
   const [sortBy, setSortBy] = useState("featured");
-  const [priceRange, setPriceRange] = useState([0, 100]);
+  // Price filters: derive sensible defaults from loaded products so we don't hide new items by default
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+  const [priceBounds, setPriceBounds] = useState<[number, number]>([0, 0]);
+  const [priceInit, setPriceInit] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const { products, loading, error } = useProducts();
+  // Initialize price bounds from products once when they load
+  if (!loading && products.length && !priceInit) {
+    const prices = products.map((p) => p.price ?? 0);
+    const minP = Math.min(...prices);
+    const maxP = Math.max(...prices);
+    if (Number.isFinite(minP) && Number.isFinite(maxP)) {
+      setPriceBounds([minP, maxP]);
+      setPriceRange([minP, maxP]);
+      setPriceInit(true);
+    }
+  }
+
   const { addItem, clearCart } = useCart();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { toast } = useToast();
@@ -126,8 +141,10 @@ export default function Shop() {
       product.name
         .toLowerCase()
         .includes(selectedCategory.toLowerCase().slice(0, -1));
-    const matchesPrice =
-      product.price >= priceRange[0] && product.price <= priceRange[1];
+    const usePriceFilter = priceBounds[0] !== 0 || priceBounds[1] !== 0;
+    const matchesPrice = usePriceFilter
+      ? product.price >= priceRange[0] && product.price <= priceRange[1]
+      : true;
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
@@ -237,7 +254,7 @@ export default function Shop() {
                           value={priceRange[0]}
                           onChange={(e) =>
                             setPriceRange([
-                              Number(e.target.value),
+                              Number(e.target.value || 0),
                               priceRange[1],
                             ])
                           }
@@ -251,12 +268,18 @@ export default function Shop() {
                           onChange={(e) =>
                             setPriceRange([
                               priceRange[0],
-                              Number(e.target.value),
+                              Number(e.target.value || 0),
                             ])
                           }
                           className="flex-1 text-xs sm:text-sm"
                         />
                       </div>
+                      {priceBounds[1] > 0 && (
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
+                          Available range: PKR {priceBounds[0].toFixed(0)} –{" "}
+                          {priceBounds[1].toFixed(0)}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -268,7 +291,8 @@ export default function Shop() {
                     onClick={() => {
                       setSearchQuery("");
                       setSelectedCategory("All Products");
-                      setPriceRange([0, 100]);
+                      // Reset to detected bounds so all products remain visible
+                      setPriceRange(priceBounds);
                     }}
                   >
                     Clear Filters

@@ -20,6 +20,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
 import { Reviews } from "@/components/Reviews";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +30,8 @@ export default function ProductDetail() {
   const { toggleFavorite, isFavorite } = useFavorites();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState<number>(0);
 
   const product = products.find((p) => p.id === Number(id));
 
@@ -37,6 +40,47 @@ export default function ProductDetail() {
       navigate("/shop");
     }
   }, [loading, product, navigate]);
+
+  useEffect(() => {
+    if (!product) return;
+    let isMounted = true;
+
+    const loadReviewStats = async () => {
+      // Fetch approved reviews for this product and compute stats quickly client-side
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("product_id", product.id)
+        .eq("approved", true);
+      if (!isMounted) return;
+      if (error) {
+        setAvgRating(null);
+        setReviewCount(0);
+        return;
+      }
+      const ratings = data?.map((r) => r.rating) || [];
+      setReviewCount(ratings.length);
+      setAvgRating(
+        ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0
+      );
+    };
+
+    loadReviewStats();
+
+    const onUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { productId?: number }
+        | undefined;
+      if (!detail || detail.productId === product.id) {
+        loadReviewStats();
+      }
+    };
+    window.addEventListener("reviews:updated", onUpdated as EventListener);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("reviews:updated", onUpdated as EventListener);
+    };
+  }, [product]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -171,14 +215,20 @@ export default function ProductDetail() {
                   <Star
                     key={i}
                     className={`h-5 w-5 ${
-                      i < 4
+                      i < Math.round(avgRating || 0)
                         ? "fill-accent text-accent"
                         : "text-muted-foreground"
                     }`}
                   />
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground">(0 reviews)</span>
+              <span className="text-sm text-muted-foreground">
+                {reviewCount > 0
+                  ? `${avgRating?.toFixed(1)} (${reviewCount} review${
+                      reviewCount !== 1 ? "s" : ""
+                    })`
+                  : "(No reviews yet)"}
+              </span>
             </div>
 
             {/* Price */}

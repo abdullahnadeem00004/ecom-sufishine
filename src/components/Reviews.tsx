@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Star, User, MessageCircle, ThumbsUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Star, User, MessageCircle, ThumbsUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Review {
   id: number;
@@ -28,34 +29,36 @@ export function Reviews({ productId }: ReviewsProps) {
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchReviews();
-  }, [productId]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('product_id', productId)
-        .order('created_at', { ascending: false });
+        .from("reviews")
+        .select("*")
+        .eq("product_id", productId)
+        .eq("approved", true)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setReviews(data || []);
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      console.error("Error fetching reviews:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: "Please sign in",
@@ -77,14 +80,12 @@ export function Reviews({ productId }: ReviewsProps) {
     setSubmitting(true);
 
     try {
-      const { error } = await supabase
-        .from('reviews')
-        .insert({
-          user_id: user.id,
-          product_id: productId,
-          rating,
-          comment: comment.trim(),
-        });
+      const { error } = await supabase.from("reviews").insert({
+        user_id: user.id,
+        product_id: productId,
+        rating,
+        comment: comment.trim(),
+      });
 
       if (error) throw error;
 
@@ -93,12 +94,21 @@ export function Reviews({ productId }: ReviewsProps) {
         description: "Thank you for your feedback!",
       });
 
-      setComment('');
+      setComment("");
       setRating(5);
       setShowForm(false);
+      // Notify other parts of the app (e.g., ProductDetail) to refresh review stats
+      // Best-effort event; ignore errors in non-browser environments
+      try {
+        window.dispatchEvent(
+          new CustomEvent("reviews:updated", { detail: { productId } })
+        );
+      } catch (err) {
+        // noop
+      }
       fetchReviews();
     } catch (error) {
-      console.error('Error submitting review:', error);
+      console.error("Error submitting review:", error);
       toast({
         title: "Error submitting review",
         description: "Please try again later.",
@@ -109,11 +119,16 @@ export function Reviews({ productId }: ReviewsProps) {
     }
   };
 
-  const averageRating = reviews.length > 0 
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
-    : 0;
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      : 0;
 
-  const renderStars = (rating: number, interactive = false, onSelect?: (rating: number) => void) => {
+  const renderStars = (
+    rating: number,
+    interactive = false,
+    onSelect?: (rating: number) => void
+  ) => {
     return (
       <div className="flex items-center space-x-1">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -121,15 +136,17 @@ export function Reviews({ productId }: ReviewsProps) {
             key={star}
             type={interactive ? "button" : undefined}
             onClick={interactive && onSelect ? () => onSelect(star) : undefined}
-            className={interactive ? "hover:scale-110 transition-transform" : ""}
+            className={
+              interactive ? "hover:scale-110 transition-transform" : ""
+            }
             disabled={!interactive}
           >
             <Star
               className={`h-4 w-4 ${
-                star <= rating 
-                  ? 'fill-accent text-accent' 
-                  : 'text-muted-foreground'
-              } ${interactive ? 'cursor-pointer' : ''}`}
+                star <= rating
+                  ? "fill-accent text-accent"
+                  : "text-muted-foreground"
+              } ${interactive ? "cursor-pointer" : ""}`}
             />
           </button>
         ))}
@@ -164,19 +181,20 @@ export function Reviews({ productId }: ReviewsProps) {
           <MessageCircle className="mr-2 h-5 w-5" />
           Customer Reviews
         </CardTitle>
-        
+
         {reviews.length > 0 && (
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               {renderStars(Math.round(averageRating))}
               <span className="text-sm text-muted-foreground">
-                {averageRating.toFixed(1)} out of 5 ({reviews.length} review{reviews.length !== 1 ? 's' : ''})
+                {averageRating.toFixed(1)} out of 5 ({reviews.length} review
+                {reviews.length !== 1 ? "s" : ""})
               </span>
             </div>
           </div>
         )}
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Write Review Button */}
         {user && !showForm && (
@@ -189,6 +207,31 @@ export function Reviews({ productId }: ReviewsProps) {
             Write a Review
           </Button>
         )}
+        {!user && (
+          <Card className="border-dashed">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h4 className="font-medium">Want to review this product?</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Sign in to share your experience.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    const redirect = encodeURIComponent(
+                      window.location.pathname + window.location.search
+                    );
+                    navigate(`/auth?redirect=${redirect}`);
+                  }}
+                  className="btn-spiritual"
+                >
+                  Sign in to write a review
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Review Form */}
         {showForm && (
@@ -196,12 +239,16 @@ export function Reviews({ productId }: ReviewsProps) {
             <CardContent className="pt-6">
               <form onSubmit={handleSubmitReview} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Rating</label>
+                  <label className="text-sm font-medium mb-2 block">
+                    Rating
+                  </label>
                   {renderStars(rating, true, setRating)}
                 </div>
-                
+
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Comment</label>
+                  <label className="text-sm font-medium mb-2 block">
+                    Comment
+                  </label>
                   <Textarea
                     placeholder="Share your experience with this product..."
                     value={comment}
@@ -210,21 +257,21 @@ export function Reviews({ productId }: ReviewsProps) {
                     required
                   />
                 </div>
-                
+
                 <div className="flex space-x-2">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={submitting}
                     className="btn-spiritual"
                   >
-                    {submitting ? 'Submitting...' : 'Submit Review'}
+                    {submitting ? "Submitting..." : "Submit Review"}
                   </Button>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     variant="outline"
                     onClick={() => {
                       setShowForm(false);
-                      setComment('');
+                      setComment("");
                       setRating(5);
                     }}
                   >
@@ -255,7 +302,7 @@ export function Reviews({ productId }: ReviewsProps) {
                       <User className="h-5 w-5 text-primary" />
                     </div>
                   </div>
-                  
+
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-sm">
@@ -265,18 +312,18 @@ export function Reviews({ productId }: ReviewsProps) {
                         Verified Purchase
                       </Badge>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       {renderStars(review.rating)}
                       <span className="text-xs text-muted-foreground">
                         {new Date(review.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    
+
                     <p className="text-sm text-muted-foreground">
                       {review.comment}
                     </p>
-                    
+
                     <div className="flex items-center space-x-4">
                       <Button variant="ghost" size="sm" className="h-8 text-xs">
                         <ThumbsUp className="mr-1 h-3 w-3" />
@@ -285,7 +332,7 @@ export function Reviews({ productId }: ReviewsProps) {
                     </div>
                   </div>
                 </div>
-                
+
                 {index < reviews.length - 1 && <Separator className="mt-4" />}
               </div>
             ))}
