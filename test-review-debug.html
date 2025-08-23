@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Review Debug Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .result {
+        background: #f5f5f5;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .error {
+        background: #ffebee;
+        border-left: 4px solid #f44336;
+      }
+      .success {
+        background: #e8f5e9;
+        border-left: 4px solid #4caf50;
+      }
+      button {
+        padding: 8px 16px;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Review System Debug Test</h1>
+
+    <div>
+      <h2>Test Actions</h2>
+      <button onclick="testProducts()">Check Products</button>
+      <button onclick="testReviews()">Check Reviews</button>
+      <button onclick="testProductIdMapper()">Test ProductIdMapper</button>
+      <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+      // Supabase setup
+      const supabaseUrl = "https://xnbbsaybxdskxlptahmb.supabase.co";
+      const supabaseAnonKey =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhuYmJzYXlieGRza3hscHRhaG1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjM1OTQ3ODQsImV4cCI6MjAzOTE3MDc4NH0.vCjGtPJYM9XtQGKZODJR6oCDrAM1VQOhO3KnT8QsOSc";
+      const supabase = window.supabase.createClient(
+        supabaseUrl,
+        supabaseAnonKey
+      );
+
+      function addResult(content, type = "result") {
+        const results = document.getElementById("results");
+        const div = document.createElement("div");
+        div.className = `result ${type}`;
+        div.innerHTML = `<pre>${content}</pre>`;
+        results.appendChild(div);
+      }
+
+      function clearResults() {
+        document.getElementById("results").innerHTML = "";
+      }
+
+      async function testProducts() {
+        try {
+          addResult("Fetching products...", "result");
+          const { data, error } = await supabase
+            .from("products")
+            .select("*")
+            .order("id");
+
+          if (error) {
+            addResult(`Products Error: ${error.message}`, "error");
+          } else {
+            addResult(
+              `Products Found (${data.length}):\n${JSON.stringify(
+                data,
+                null,
+                2
+              )}`,
+              "success"
+            );
+          }
+        } catch (err) {
+          addResult(`Products Exception: ${err.message}`, "error");
+        }
+      }
+
+      async function testReviews() {
+        try {
+          addResult("Fetching reviews for product ID 2...", "result");
+          const { data, error } = await supabase
+            .from("reviews")
+            .select("*")
+            .eq("product_id", 2);
+
+          if (error) {
+            addResult(`Reviews Error: ${error.message}`, "error");
+          } else {
+            addResult(
+              `Reviews Found (${data.length}):\n${JSON.stringify(
+                data,
+                null,
+                2
+              )}`,
+              "success"
+            );
+          }
+        } catch (err) {
+          addResult(`Reviews Exception: ${err.message}`, "error");
+        }
+      }
+
+      function testProductIdMapper() {
+        // Simple ProductIdMapper mock for testing
+        const ProductIdMapper = {
+          mappings: [],
+          nextId: 1,
+
+          toIntegerForDB(productId) {
+            if (typeof productId === "number") {
+              return productId;
+            }
+            // For UUID strings, create or find mapping
+            let mapping = this.mappings.find((m) => m.uuid === productId);
+            if (!mapping) {
+              mapping = { uuid: productId, integerId: this.nextId++ };
+              this.mappings.push(mapping);
+            }
+            return mapping.integerId;
+          },
+        };
+
+        addResult("Testing ProductIdMapper...", "result");
+
+        // Test cases
+        const testCases = [
+          { input: 2, expected: 2 },
+          { input: "2", expected: 2 },
+          { input: "4bd70879-bb29-4be1-892c-6aef96af930f", expected: 1 },
+        ];
+
+        testCases.forEach((test) => {
+          const result = ProductIdMapper.toIntegerForDB(test.input);
+          const status = result === test.expected ? "✓" : "✗";
+          addResult(
+            `${status} Input: ${test.input} -> Output: ${result} (Expected: ${test.expected})`,
+            result === test.expected ? "success" : "error"
+          );
+        });
+
+        addResult(
+          `Final mappings: ${JSON.stringify(
+            ProductIdMapper.mappings,
+            null,
+            2
+          )}`,
+          "result"
+        );
+      }
+
+      // Run initial test
+      setTimeout(() => {
+        addResult("Review Debug Test Page Loaded", "success");
+        addResult("Click buttons above to run tests", "result");
+      }, 100);
+    </script>
+  </body>
+</html>

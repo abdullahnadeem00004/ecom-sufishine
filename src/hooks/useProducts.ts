@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Product {
-  id: number;
+  id: string | number; // Handle both UUID and integer IDs
   name: string;
   description: string;
   price: number;

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Authentication & Review Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .result {
+        background: #f5f5f5;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .error {
+        background: #ffebee;
+        border-left: 4px solid #f44336;
+      }
+      .success {
+        background: #e8f5e9;
+        border-left: 4px solid #4caf50;
+      }
+      .warning {
+        background: #fff3e0;
+        border-left: 4px solid #ff9800;
+      }
+      button {
+        padding: 8px 16px;
+        margin: 5px;
+      }
+      input {
+        padding: 8px;
+        margin: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      .form-group {
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Authentication & Review Test</h1>
+
+    <div id="auth-section">
+      <h2>Authentication Test</h2>
+      <div class="form-group">
+        <input
+          type="email"
+          id="email"
+          placeholder="Email"
+          value="test@example.com"
+        />
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          value="password123"
+        />
+      </div>
+      <button onclick="testSignUp()">Sign Up</button>
+      <button onclick="testSignIn()">Sign In</button>
+      <button onclick="testSignOut()">Sign Out</button>
+      <button onclick="checkAuthStatus()">Check Auth Status</button>
+    </div>
+
+    <div id="review-section">
+      <h2>Review Test</h2>
+      <button onclick="testReviewSubmission()">Test Review Submission</button>
+      <button onclick="fetchReviews()">Fetch Reviews</button>
+    </div>
+
+    <div>
+      <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+      // Use the same Supabase config as your app
+      const supabaseUrl = "https://wkihufuubmqkvjjdejkq.supabase.co";
+      const supabaseAnonKey =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndraWh1ZnV1Ym1xa3ZqamRlamtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMTE5NTYsImV4cCI6MjA3MDY4Nzk1Nn0.MIyb19CNBMhHAFB8PHMqvyq_mdQM9HGwVyytofP9g9o";
+      const supabase = window.supabase.createClient(
+        supabaseUrl,
+        supabaseAnonKey
+      );
+
+      function addResult(content, type = "result") {
+        const results = document.getElementById("results");
+        const div = document.createElement("div");
+        div.className = `result ${type}`;
+        div.innerHTML = `<pre>${content}</pre>`;
+        results.appendChild(div);
+        results.scrollTop = results.scrollHeight;
+      }
+
+      function clearResults() {
+        document.getElementById("results").innerHTML = "";
+      }
+
+      async function checkAuthStatus() {
+        try {
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
+
+          if (error) {
+            addResult(`Auth Error: ${error.message}`, "error");
+          } else if (session) {
+            addResult(
+              `✅ User Authenticated: ${session.user.email}\nUser ID: ${session.user.id}`,
+              "success"
+            );
+          } else {
+            addResult("⚠️ No active session", "warning");
+          }
+        } catch (err) {
+          addResult(`Exception: ${err.message}`, "error");
+        }
+      }
+
+      async function testSignUp() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+          });
+
+          if (error) {
+            addResult(`Sign Up Error: ${error.message}`, "error");
+          } else {
+            addResult(
+              `✅ Sign Up Success: ${JSON.stringify(data, null, 2)}`,
+              "success"
+            );
+          }
+        } catch (err) {
+          addResult(`Sign Up Exception: ${err.message}`, "error");
+        }
+      }
+
+      async function testSignIn() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (error) {
+            addResult(`Sign In Error: ${error.message}`, "error");
+          } else {
+            addResult(
+              `✅ Sign In Success: ${data.user.email}\nUser ID: ${data.user.id}`,
+              "success"
+            );
+          }
+        } catch (err) {
+          addResult(`Sign In Exception: ${err.message}`, "error");
+        }
+      }
+
+      async function testSignOut() {
+        try {
+          const { error } = await supabase.auth.signOut();
+
+          if (error) {
+            addResult(`Sign Out Error: ${error.message}`, "error");
+          } else {
+            addResult(`✅ Sign Out Success`, "success");
+          }
+        } catch (err) {
+          addResult(`Sign Out Exception: ${err.message}`, "error");
+        }
+      }
+
+      async function testReviewSubmission() {
+        try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          if (!session) {
+            addResult("❌ Must be signed in to submit review", "error");
+            return;
+          }
+
+          const reviewData = {
+            user_id: session.user.id,
+            product_id: 2, // Test with shampoo product
+            rating: 5,
+            comment:
+              "Test review from debug page - " + new Date().toISOString(),
+          };
+
+          addResult(
+            `📝 Submitting review: ${JSON.stringify(reviewData, null, 2)}`,
+            "result"
+          );
+
+          const { data, error } = await supabase
+            .from("reviews")
+            .insert([reviewData])
+            .select();
+
+          if (error) {
+            addResult(
+              `❌ Review Submit Error: ${error.message}\nCode: ${error.code}\nDetails: ${error.details}`,
+              "error"
+            );
+          } else {
+            addResult(
+              `✅ Review Submitted Successfully: ${JSON.stringify(
+                data,
+                null,
+                2
+              )}`,
+              "success"
+            );
+          }
+        } catch (err) {
+          addResult(`Review Submit Exception: ${err.message}`, "error");
+        }
+      }
+
+      async function fetchReviews() {
+        try {
+          const { data, error } = await supabase
+            .from("reviews")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error) {
+            addResult(`❌ Fetch Reviews Error: ${error.message}`, "error");
+          } else {
+            addResult(
+              `✅ Reviews Fetched: ${data.length} reviews\n${JSON.stringify(
+                data,
+                null,
+                2
+              )}`,
+              "success"
+            );
+          }
+        } catch (err) {
+          addResult(`Fetch Reviews Exception: ${err.message}`, "error");
+        }
+      }
+
+      // Initialize
+      setTimeout(() => {
+        addResult("🧪 Authentication & Review Test Page Loaded", "success");
+        checkAuthStatus();
+      }, 100);
+    </script>
+  </body>
+</html>
