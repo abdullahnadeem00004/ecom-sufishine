@@ -1,0 +1,10 @@
+# Netlify redirects file for SPA routing
+# This ensures all routes are served by index.html so React Router can handle them
+
+/*    /index.html   200
+
+# Optional: Redirect HTTP to HTTPS (uncomment if needed)
+# http://your-domain.netlify.app/*  https://your-domain.netlify.app/:splat  301!
+
+# Optional: Redirect www to non-www (uncomment if needed)
+# https://www.your-domain.com/*  https://your-domain.com/:splat  301!

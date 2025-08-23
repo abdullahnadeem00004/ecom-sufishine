@@ -333,15 +333,15 @@ export default function Home() {
               </span>
             </div>
           ) : (
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
               {products.map((product) => (
                 <Card
                   key={product.id}
-                  className="overflow-hidden hover-glow border-0 shadow-xl w-full max-w-md lg:max-w-lg xl:max-w-xl"
+                  className="overflow-hidden hover-glow border-0 shadow-xl w-full max-w-xs lg:max-w-sm"
                 >
                   {/* Product Image */}
                   <Link to={`/shop/${product.id}`} className="block">
-                    <div className="relative bg-gradient-to-br from-muted/30 to-muted/50 p-12 sm:p-16 flex items-center justify-center">
+                    <div className="relative bg-gradient-to-br from-muted/30 to-muted/50 p-6 sm:p-8 flex items-center justify-center">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -363,7 +363,7 @@ export default function Home() {
                       <img
                         src={product.image_url || "/placeholder.svg"}
                         alt={product.name}
-                        className="w-full max-w-md h-80 sm:h-96 lg:h-[28rem] object-contain animate-float"
+                        className="w-full max-w-xs h-48 sm:h-60 object-contain animate-float"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
                             "/placeholder.svg";
@@ -373,12 +373,12 @@ export default function Home() {
                   </Link>
 
                   {/* Product Details */}
-                  <CardContent className="p-6 sm:p-8 space-y-4 sm:space-y-6">
+                  <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                     <div>
-                      <CardTitle className="text-xl sm:text-2xl mb-3 line-clamp-2 text-center">
+                      <CardTitle className="text-lg sm:text-xl mb-2 line-clamp-2 text-center">
                         {product.name}
                       </CardTitle>
-                      <CardDescription className="text-base sm:text-lg line-clamp-2 text-center">
+                      <CardDescription className="text-sm sm:text-base line-clamp-2 text-center">
                         {product.description}
                       </CardDescription>
                     </div>
@@ -389,7 +389,7 @@ export default function Home() {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-5 w-5 ${
+                            className={`h-4 w-4 ${
                               i < 4
                                 ? "fill-accent text-accent"
                                 : "text-muted-foreground"
@@ -401,21 +401,21 @@ export default function Home() {
                     </div>
 
                     {/* Price */}
-                    <div className="flex flex-col items-center space-y-3">
-                      <span className="text-2xl sm:text-3xl font-bold text-primary">
+                    <div className="flex flex-col items-center space-y-2">
+                      <span className="text-xl sm:text-2xl font-bold text-primary">
                         PKR {product.price.toFixed(2)}
                       </span>
                       {product.stock > 0 ? (
                         <Badge
                           variant="outline"
-                          className="text-green-600 border-green-600 text-sm"
+                          className="text-green-600 border-green-600 text-xs"
                         >
                           In Stock ({product.stock})
                         </Badge>
                       ) : (
                         <Badge
                           variant="outline"
-                          className="text-red-600 border-red-600 text-sm"
+                          className="text-red-600 border-red-600 text-xs"
                         >
                           Out of Stock
                         </Badge>
@@ -423,35 +423,35 @@ export default function Home() {
                     </div>
 
                     {/* Benefits Grid */}
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
                       {benefits.slice(0, 4).map((benefit) => (
                         <div
                           key={benefit.title}
                           className="flex items-center space-x-2"
                         >
-                          <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                          <span className="text-sm">{benefit.title}</span>
+                          <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                          <span className="text-xs">{benefit.title}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col gap-3 sm:gap-4">
+                    <div className="flex flex-col gap-2 sm:gap-3">
                       <Button
-                        className="btn-spiritual w-full text-base sm:text-lg py-3 sm:py-4"
+                        className="btn-spiritual w-full text-sm sm:text-base py-2 sm:py-3"
                         onClick={() => handleBuyNow(product)}
                         disabled={product.stock === 0}
                       >
-                        <Zap className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                        <Zap className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         Buy Now
                       </Button>
                       <Button
                         variant="outline"
-                        className="hover-glow w-full text-base sm:text-lg py-3 sm:py-4"
+                        className="hover-glow w-full text-sm sm:text-base py-2 sm:py-3"
                         onClick={() => handleAddToCart(product)}
                         disabled={product.stock === 0}
                       >
-                        <ShoppingCart className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                        <ShoppingCart className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         Add to Cart
                       </Button>
                     </div>
