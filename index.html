@@ -4,22 +4,46 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sufi Shine - Pure Organic Beauty Products</title>
-    <meta name="description" content="Discover pure organic beauty products with Sufi Shine. Natural hair care, skin care, and makeup with 100% organic ingredients." />
+    <meta
+      name="description"
+      content="Discover pure organic beauty products with Sufi Shine. Natural hair care, skin care, and makeup with 100% organic ingredients."
+    />
     <meta name="author" content="Sufi Shine" />
-    <meta name="keywords" content="organic beauty, natural hair care, sufi shine, organic cosmetics, natural ingredients" />
+    <meta
+      name="keywords"
+      content="organic beauty, natural hair care, sufi shine, organic cosmetics, natural ingredients"
+    />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://abdullahnadeem00004.github.io/final-sufishine/" />
-    <meta property="og:title" content="Sufi Shine - Pure Organic Beauty Products" />
-    <meta property="og:description" content="Discover pure organic beauty products with Sufi Shine. Natural hair care, skin care, and makeup with 100% organic ingredients." />
+    <meta
+      property="og:url"
+      content="https://abdullahnadeem00004.github.io/final-sufishine/"
+    />
+    <meta
+      property="og:title"
+      content="Sufi Shine - Pure Organic Beauty Products"
+    />
+    <meta
+      property="og:description"
+      content="Discover pure organic beauty products with Sufi Shine. Natural hair care, skin care, and makeup with 100% organic ingredients."
+    />
     <meta property="og:image" content="/logo.JPG" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://abdullahnadeem00004.github.io/final-sufishine/" />
-    <meta property="twitter:title" content="Sufi Shine - Pure Organic Beauty Products" />
-    <meta property="twitter:description" content="Discover pure organic beauty products with Sufi Shine. Natural hair care, skin care, and makeup with 100% organic ingredients." />
+    <meta
+      property="twitter:url"
+      content="https://abdullahnadeem00004.github.io/final-sufishine/"
+    />
+    <meta
+      property="twitter:title"
+      content="Sufi Shine - Pure Organic Beauty Products"
+    />
+    <meta
+      property="twitter:description"
+      content="Discover pure organic beauty products with Sufi Shine. Natural hair care, skin care, and makeup with 100% organic ingredients."
+    />
     <meta property="twitter:image" content="/logo.JPG" />
 
     <!-- Favicon -->
@@ -37,16 +61,22 @@
       // When the single page app is loaded further down in this file,
       // the correct url will be waiting in the browser's history for
       // the single page app to route accordingly.
-      (function(l) {
-        if (l.search[1] === '/' ) {
-          var decoded = l.search.slice(1).split('&').map(function(s) { 
-            return s.replace(/~and~/g, '&')
-          }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
+      (function (l) {
+        if (l.search[1] === "/") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .map(function (s) {
+              return s.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(
+            null,
+            null,
+            l.pathname.slice(0, -1) + decoded + l.hash
           );
         }
-      }(window.location))
+      })(window.location);
     </script>
   </head>
 

@@ -1,16 +1,20 @@
 # Apache .htaccess file for Single Page Applications
+
 # This handles client-side routing by redirecting all requests to index.html
 
 Options -MultiViews
 RewriteEngine On
 
 # Handle Angular and React Router routes
+
 # If the requested resource doesn't exist, use index.html
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]
 
 # Optional: Security headers
+
 <IfModule mod_headers.c>
     Header always set X-Frame-Options DENY
     Header always set X-Content-Type-Options nosniff
@@ -19,6 +23,7 @@ RewriteRule . /index.html [L]
 </IfModule>
 
 # Optional: Compression
+
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/plain
     AddOutputFilterByType DEFLATE text/html
@@ -32,6 +37,7 @@ RewriteRule . /index.html [L]
 </IfModule>
 
 # Optional: Cache control
+
 <IfModule mod_expires.c>
     ExpiresActive on
     ExpiresByType text/css "access plus 1 year"
