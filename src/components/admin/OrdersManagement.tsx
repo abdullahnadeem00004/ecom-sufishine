@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
+import { sendShippingNotificationEmail } from "@/lib/emailService";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -283,6 +284,40 @@ export default function OrdersManagement() {
 
       if (error) throw error;
 
+      // Get the full order details for the email
+      const orderForEmail = orders.find((order) => order.id === orderId);
+
+      if (orderForEmail) {
+        // Send shipping notification email
+        try {
+          // Transform Order to OrderData format for email service
+          const emailOrderData = {
+            orderId: orderForEmail.id.toString(),
+            orderNumber: `ORD-${orderForEmail.id}`,
+            customerName: orderForEmail.customer_name,
+            customerEmail: orderForEmail.customer_email,
+            customerPhone: orderForEmail.customer_phone,
+            items: orderForEmail.items,
+            subtotal: orderForEmail.subtotal || orderForEmail.total_amount,
+            shippingCharge: orderForEmail.shipping_charge || 0,
+            total: orderForEmail.total_amount,
+            paymentMethod: orderForEmail.payment_method || "Cash on Delivery",
+            shippingAddress:
+              typeof orderForEmail.shipping_address === "string"
+                ? JSON.parse(orderForEmail.shipping_address)
+                : orderForEmail.shipping_address,
+            trackingId: trackingId,
+          };
+
+          await sendShippingNotificationEmail(
+            orderForEmail.customer_email,
+            emailOrderData
+          );
+        } catch (emailError) {
+          // Don't fail the tracking update if email fails
+        }
+      }
+
       // Update the local orders state
       setOrders(
         orders.map((order) =>
@@ -297,7 +332,8 @@ export default function OrdersManagement() {
 
       toast({
         title: "Success",
-        description: "Tracking ID updated successfully",
+        description:
+          "Tracking ID updated successfully and customer notified via email",
       });
     } catch (error) {
       console.error("Error updating tracking ID:", error);

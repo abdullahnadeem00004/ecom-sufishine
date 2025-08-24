@@ -29,6 +29,7 @@ import ReviewsManagement from "./pages/admin/ReviewsManagement";
 import Analytics from "./pages/admin/Analytics";
 import Settings from "./pages/admin/Settings";
 import Checkout from "./pages/Checkout";
+import EmailDebugTester from "./components/EmailDebugTester";
 import UserOrderHistoryWithTracking from "./components/UserOrderHistoryWithTracking";
 
 const queryClient = new QueryClient();
@@ -150,6 +151,10 @@ const App = () => (
                             element={<UserOrderHistoryWithTracking />}
                           />
                           <Route path="/checkout" element={<Checkout />} />
+                          <Route
+                            path="/email-debug"
+                            element={<EmailDebugTester />}
+                          />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Layout>

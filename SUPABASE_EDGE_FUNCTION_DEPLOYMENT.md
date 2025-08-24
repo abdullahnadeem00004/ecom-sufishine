@@ -1,170 +1,54 @@
-import { supabase } from "@/lib/supabaseClient";
+# Supabase Edge Function Deployment Guide
 
-export interface OrderItem {
-  id: number | string;
-  name: string;
-  price: number;
-  quantity: number;
-  image_url?: string;
-  image?: string; // For backward compatibility
-}
+## 🚀 Manual Steps to Run in Supabase Dashboard
 
-export interface OrderData {
-  orderId?: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  items: OrderItem[];
-  subtotal?: number;
-  shippingCharge?: number;
-  total: number;
-  paymentMethod: string;
-  shippingAddress: {
-    address: string;
-    city: string;
-    postalCode: string;
-    country: string;
-  };
-  estimatedDelivery?: string;
-  trackingId?: string;
-  trackingNumber?: string; // For backward compatibility
-}
+### Step 1: Deploy the Edge Function
 
-export interface EmailResult {
-  success: boolean;
-  data?: unknown;
-  error?: string;
-  fallback?: boolean;
-  message?: string;
-}
+1. **Open Supabase Dashboard**
 
-// Send order confirmation email via Supabase Edge Function
-export const sendOrderConfirmationEmail = async (
-  customerEmail: string,
-  orderData: OrderData
-): Promise<EmailResult> => {
-  try {
-    // Validate required inputs
-    if (!customerEmail || !orderData) {
-      return {
-        success: false,
-        error: "Missing required parameters: customerEmail or orderData",
-      };
-    }
+   - Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
+   - Select your project: `final-sufishine`
 
-    // Call the Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke("send-email", {
-      body: {
-        customerEmail,
-        orderData,
-      },
-    });
+2. **Navigate to Edge Functions**
 
-    if (error) {
-      // Common Edge Function issues that should trigger fallback
-      const fallbackTriggers = [
-        "Function not found",
-        "404",
-        "500",
-        "Internal Server Error",
-        "Edge Function returned a non-2xx status code",
-        "RESEND_API_KEY not configured",
-        "FunctionsRelayError",
-        "FunctionsHttpError",
-      ];
+   - Click on **"Functions"** in the left sidebar
+   - Click **"Create a new function"**
 
-      const shouldUseFallback = fallbackTriggers.some(
-        (trigger) =>
-          error.message?.includes(trigger) ||
-          error.details?.includes(trigger) ||
-          JSON.stringify(error).includes(trigger)
-      );
+3. **Create the Function**
+   - **Function Name**: `send-email`
+   - **Copy and paste the following code** into the function editor:
 
-      if (shouldUseFallback) {
-        return await fallbackEmailLogging(customerEmail, orderData);
-      }
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-      return {
-        success: false,
-        error: `Edge Function error: ${error.message || JSON.stringify(error)}`,
-      };
-    }
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-    if (data && data.success) {
-      return {
-        success: true,
-        data: data.data,
-        message: data.message || "Order confirmation email sent successfully",
-      };
-    } else {
-      return await fallbackEmailLogging(customerEmail, orderData);
-    }
-  } catch (error) {
-    // Always use fallback for any catch block errors during development
-    return await fallbackEmailLogging(customerEmail, orderData);
-  }
+// CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Fallback email logging function
-async function fallbackEmailLogging(
-  customerEmail: string,
-  orderData: OrderData
-): Promise<EmailResult> {
-  console.log("=== EMAIL FALLBACK MODE ===");
-  console.log("📧 Email would be sent to:", customerEmail);
-  console.log(
-    "📋 Subject:",
-    `Order Confirmation #${orderData.orderNumber} - SUFI SHINE`
-  );
-  console.log("👤 Customer:", orderData.customerName);
-  console.log(" Total: Rs.", orderData.total);
-  console.log("💳 Payment Method:", orderData.paymentMethod);
-  console.log("📦 Items:", orderData.items.length, "item(s)");
-
-  if (orderData.trackingId || orderData.trackingNumber) {
-    console.log(
-      "📍 Tracking Number:",
-      orderData.trackingId || orderData.trackingNumber
-    );
-  }
-
-  console.log(
-    "📅 Estimated Delivery:",
-    orderData.estimatedDelivery || "3-5 business days"
-  );
-  console.log("=== END FALLBACK MODE ===");
-  console.log(
-    "ℹ️ To enable actual email sending, deploy the Supabase Edge Function and add your Resend API key."
-  );
-
-  return {
-    success: true,
-    fallback: true,
-    message: "Email system in fallback mode - check console for details",
-  };
-}
-
-// Generate complete HTML email template
-function generateFullEmailHTML(
-  orderData: OrderData,
-  customerEmail: string
-): string {
+// Email template generator function
+function generateOrderConfirmationHTML(orderData: any): string {
   const {
     orderNumber,
     customerName,
-    items,
+    customerEmail,
+    customerPhone,
+    items = [],
     total,
     paymentMethod,
     shippingAddress,
     trackingId,
     trackingNumber,
-    estimatedDelivery = "3-5 business days",
   } = orderData;
 
   const itemsHtml = items
     .map(
-      (item) => `
+      (item: any) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -286,10 +170,18 @@ function generateFullEmailHTML(
           <!-- Tracking Information -->
           <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 25px 0;">
             <h3 style="margin: 0 0 10px 0; color: #1e40af; font-size: 16px; font-weight: 600;">📍 Order Tracking</h3>
-            <p style="margin: 10px 0; color: #1e40af;">As soon as your order is dispatched, you will receive your tracking ID via email and SMS.</p>
-            <p style="margin: 10px 0; color: #1e40af;">Please continuously check your <strong>"My Orders"</strong> section on our website for continuous updates about your order status.</p>
-            <p style="margin: 10px 0; color: #1e40af;">Expected delivery: <strong>${estimatedDelivery}</strong></p>
-            <p style="margin: 10px 0; color: #1e40af;">You can also contact us anytime for order updates and assistance.</p>
+            ${
+              trackingId || trackingNumber
+                ? `
+              <p style="margin: 10px 0; color: #1e40af;">Your tracking number: <strong>${
+                trackingId || trackingNumber
+              }</strong></p>
+            `
+                : `
+              <p style="margin: 10px 0; color: #1e40af;">You will receive a tracking number within 1-2 business days.</p>
+            `
+            }
+            <p style="margin: 10px 0; color: #1e40af;">Track your order anytime on our website or contact us for updates.</p>
           </div>
 
           <!-- Contact Information -->
@@ -336,97 +228,169 @@ function generateFullEmailHTML(
   `;
 }
 
-// For backward compatibility - alias to the main function
-export const sendOrderEmail = sendOrderConfirmationEmail;
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
-// Send shipping notification email when admin marks order as shipped
-export const sendShippingNotificationEmail = async (
-  customerEmail: string,
-  orderData: OrderData & { trackingId: string }
-): Promise<EmailResult> => {
   try {
-    // Validate required inputs
-    if (!customerEmail || !orderData || !orderData.trackingId) {
-      return {
-        success: false,
-        error:
-          "Missing required parameters: customerEmail, orderData, or trackingId",
-      };
+    // Check if API key is configured
+    if (!RESEND_API_KEY) {
+      throw new Error(
+        "RESEND_API_KEY not configured in Supabase environment variables"
+      );
     }
 
-    // Call the Supabase Edge Function for shipping notifications
-    const { data, error } = await supabase.functions.invoke(
-      "send-shipping-notification",
+    const { orderData, customerEmail } = await req.json();
+
+    // Validate required data
+    if (!customerEmail || !orderData) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Missing required fields: customerEmail and orderData",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Sending email to:", customerEmail);
+    console.log("Order data:", orderData);
+
+    // Generate email HTML
+    const emailHtml = generateOrderConfirmationHTML(orderData);
+
+    // Send email using Resend API
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "SUFI SHINE <orders@resend.dev>", // Use your verified domain later
+        to: [customerEmail],
+        subject: `Order Confirmation #${orderData.orderNumber} - SUFI SHINE`,
+        html: emailHtml,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`Resend API error: ${result.message || "Unknown error"}`);
+    }
+
+    console.log("Email sent successfully:", result);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: result,
+        message: "Order confirmation email sent successfully",
+      }),
       {
-        body: {
-          customerEmail,
-          orderData,
-        },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-
-    if (error) {
-      return {
-        success: false,
-        error: `Shipping notification error: ${
-          error.message || JSON.stringify(error)
-        }`,
-      };
-    }
-
-    if (data && data.success) {
-      return {
-        success: true,
-        data: data.data,
-        message:
-          data.message || "Shipping notification email sent successfully",
-      };
-    } else {
-      return {
-        success: false,
-        error:
-          data?.error ||
-          "Unknown error from shipping notification Edge Function",
-      };
-    }
   } catch (error) {
-    return {
-      success: false,
-      error: `Shipping notification service error: ${
-        error?.message || JSON.stringify(error)
-      }`,
-    };
-  }
-};
+    console.error("Error sending email:", error);
 
-// Test the email service connection
-export const testEmailServiceConnection = async (
-  testEmail: string
-): Promise<EmailResult> => {
-  const testOrderData: OrderData = {
-    orderNumber: `TEST-${Date.now()}`,
-    customerName: "Test Customer",
-    customerEmail: testEmail,
-    customerPhone: "+92 300 1234567",
-    items: [
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message || "Failed to send email",
+      }),
       {
-        id: "1",
-        name: "SUFI SHINE Hair Oil - Premium",
-        price: 1500,
-        quantity: 1,
-        image_url: "/src/assets/hair-oil-bottle.jpg",
-      },
-    ],
-    total: 1500,
-    paymentMethod: "COD",
-    shippingAddress: {
-      address: "123 Test Street",
-      city: "Karachi",
-      postalCode: "75500",
-      country: "Pakistan",
-    },
-    trackingId: "TRK-TEST-123456",
-  };
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
+```
 
-  return await sendOrderConfirmationEmail(testEmail, testOrderData);
-};
+4. **Deploy the Function**
+   - Click **"Deploy"** button
+   - Wait for deployment to complete
+
+### Step 2: Add Environment Variable
+
+1. **Navigate to Settings**
+
+   - Click on **"Settings"** in the left sidebar
+   - Click on **"Environment variables"**
+
+2. **Add Resend API Key**
+   - Click **"Add new variable"**
+   - **Name**: `RESEND_API_KEY`
+   - **Value**: `re_aqNykJwY_9hvHyK1WMDEtHLjYrN8EG9yc`
+   - **Scope**: Select **"Edge Functions"**
+   - Click **"Save"**
+
+### Step 3: Test the Function (Optional)
+
+1. **Go to Functions Dashboard**
+
+   - Navigate back to **"Functions"**
+   - Click on your **"send-email"** function
+
+2. **Test with Sample Data**
+   - Use the test interface with this sample JSON:
+
+```json
+{
+  "customerEmail": "your-test@email.com",
+  "orderData": {
+    "orderNumber": "TEST-123",
+    "customerName": "Test Customer",
+    "items": [
+      {
+        "name": "SUFI SHINE Hair Oil",
+        "price": 1500,
+        "quantity": 1,
+        "image_url": "/hair-oil-bottle.jpg"
+      }
+    ],
+    "total": 1500,
+    "paymentMethod": "COD",
+    "shippingAddress": {
+      "address": "123 Test Street",
+      "city": "Karachi",
+      "postalCode": "75500",
+      "country": "Pakistan"
+    }
+  }
+}
+```
+
+## ✅ What This Achieves
+
+- **✅ Bypasses CORS**: Server-side function eliminates browser CORS restrictions
+- **✅ Secure API Key**: Your Resend API key is stored securely in Supabase environment
+- **✅ Complete Email Templates**: Professional HTML emails with all order details
+- **✅ Error Handling**: Comprehensive error handling and logging
+- **✅ Easy Integration**: Your frontend will automatically use this once deployed
+
+## 🎯 After Deployment
+
+Once you complete these steps in Supabase:
+
+1. **Test from Admin Panel**: The email testing will now send actual emails
+2. **Order Confirmation**: Customer orders will trigger real email delivery
+3. **No More Fallback**: The system will switch from logging to actual email sending
+4. **Production Ready**: Your email system will be fully functional
+
+## 📞 Need Help?
+
+If you encounter any issues during deployment, you can:
+
+1. Check the Supabase function logs for errors
+2. Verify the environment variable is set correctly
+3. Test with the sample JSON provided above
+
+Let me know once you've completed the deployment and we can test it together!

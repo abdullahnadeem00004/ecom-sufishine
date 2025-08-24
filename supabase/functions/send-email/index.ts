@@ -1,176 +1,31 @@
-import { supabase } from "@/lib/supabaseClient";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-export interface OrderItem {
-  id: number | string;
-  name: string;
-  price: number;
-  quantity: number;
-  image_url?: string;
-  image?: string; // For backward compatibility
-}
-
-export interface OrderData {
-  orderId?: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  items: OrderItem[];
-  subtotal?: number;
-  shippingCharge?: number;
-  total: number;
-  paymentMethod: string;
-  shippingAddress: {
-    address: string;
-    city: string;
-    postalCode: string;
-    country: string;
-  };
-  estimatedDelivery?: string;
-  trackingId?: string;
-  trackingNumber?: string; // For backward compatibility
-}
-
-export interface EmailResult {
-  success: boolean;
-  data?: unknown;
-  error?: string;
-  fallback?: boolean;
-  message?: string;
-}
-
-// Send order confirmation email via Supabase Edge Function
-export const sendOrderConfirmationEmail = async (
-  customerEmail: string,
-  orderData: OrderData
-): Promise<EmailResult> => {
-  try {
-    // Validate required inputs
-    if (!customerEmail || !orderData) {
-      return {
-        success: false,
-        error: "Missing required parameters: customerEmail or orderData",
-      };
-    }
-
-    // Call the Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke("send-email", {
-      body: {
-        customerEmail,
-        orderData,
-      },
-    });
-
-    if (error) {
-      // Common Edge Function issues that should trigger fallback
-      const fallbackTriggers = [
-        "Function not found",
-        "404",
-        "500",
-        "Internal Server Error",
-        "Edge Function returned a non-2xx status code",
-        "RESEND_API_KEY not configured",
-        "FunctionsRelayError",
-        "FunctionsHttpError",
-      ];
-
-      const shouldUseFallback = fallbackTriggers.some(
-        (trigger) =>
-          error.message?.includes(trigger) ||
-          error.details?.includes(trigger) ||
-          JSON.stringify(error).includes(trigger)
-      );
-
-      if (shouldUseFallback) {
-        return await fallbackEmailLogging(customerEmail, orderData);
-      }
-
-      return {
-        success: false,
-        error: `Edge Function error: ${error.message || JSON.stringify(error)}`,
-      };
-    }
-
-    if (data && data.success) {
-      return {
-        success: true,
-        data: data.data,
-        message: data.message || "Order confirmation email sent successfully",
-      };
-    } else {
-      return await fallbackEmailLogging(customerEmail, orderData);
-    }
-  } catch (error) {
-    // Always use fallback for any catch block errors during development
-    return await fallbackEmailLogging(customerEmail, orderData);
-  }
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Fallback email logging function
-async function fallbackEmailLogging(
-  customerEmail: string,
-  orderData: OrderData
-): Promise<EmailResult> {
-  console.log("=== EMAIL FALLBACK MODE ===");
-  console.log("📧 Email would be sent to:", customerEmail);
-  console.log(
-    "📋 Subject:",
-    `Order Confirmation #${orderData.orderNumber} - SUFI SHINE`
-  );
-  console.log("👤 Customer:", orderData.customerName);
-  console.log(" Total: Rs.", orderData.total);
-  console.log("💳 Payment Method:", orderData.paymentMethod);
-  console.log("📦 Items:", orderData.items.length, "item(s)");
-
-  if (orderData.trackingId || orderData.trackingNumber) {
-    console.log(
-      "📍 Tracking Number:",
-      orderData.trackingId || orderData.trackingNumber
-    );
-  }
-
-  console.log(
-    "📅 Estimated Delivery:",
-    orderData.estimatedDelivery || "3-5 business days"
-  );
-  console.log("=== END FALLBACK MODE ===");
-  console.log(
-    "ℹ️ To enable actual email sending, deploy the Supabase Edge Function and add your Resend API key."
-  );
-
-  return {
-    success: true,
-    fallback: true,
-    message: "Email system in fallback mode - check console for details",
-  };
-}
-
-// Generate complete HTML email template
-function generateFullEmailHTML(
-  orderData: OrderData,
-  customerEmail: string
-): string {
+// Email template generator function
+function generateOrderConfirmationHTML(orderData: any): string {
   const {
     orderNumber,
     customerName,
-    items,
+    items = [],
     total,
     paymentMethod,
     shippingAddress,
-    trackingId,
     trackingNumber,
-    estimatedDelivery = "3-5 business days",
   } = orderData;
 
   const itemsHtml = items
     .map(
-      (item) => `
+      (item: any) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="${
-            item.image_url || item.image || "/placeholder-product.jpg"
-          }" alt="${
+          <img src="${item.image_url || "/hair-oil-bottle.jpg"}" alt="${
         item.name
       }" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" />
           <div>
@@ -238,15 +93,15 @@ function generateFullEmailHTML(
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #e2e8f0;">
             <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px; font-weight: 600;">🚚 Shipping Address</h3>
             <p style="margin: 5px 0; color: #4b5563; line-height: 1.5;">
-              ${shippingAddress.address}<br/>
-              ${shippingAddress.city}, ${shippingAddress.postalCode}<br/>
-              ${shippingAddress.country}
+              ${shippingAddress?.address}<br/>
+              ${shippingAddress?.city}, ${shippingAddress?.postalCode}<br/>
+              ${shippingAddress?.country}
             </p>
           </div>
 
           <!-- Payment Instructions for COD -->
           ${
-            paymentMethod === "COD" || paymentMethod === "cash_on_delivery"
+            paymentMethod === "COD"
               ? `
           <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 25px 0;">
             <h3 style="margin: 0 0 10px 0; color: #92400e; font-size: 16px; font-weight: 600;">💰 Cash on Delivery Instructions</h3>
@@ -263,7 +118,7 @@ function generateFullEmailHTML(
 
           <!-- JazzCash Instructions -->
           ${
-            paymentMethod === "JazzCash" || paymentMethod === "jazzcash"
+            paymentMethod === "JazzCash"
               ? `
           <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 25px 0;">
             <h3 style="margin: 0 0 10px 0; color: #92400e; font-size: 16px; font-weight: 600;">📱 JazzCash Payment Instructions</h3>
@@ -271,6 +126,7 @@ function generateFullEmailHTML(
             <div style="background: white; padding: 15px; border-radius: 6px; margin: 10px 0; text-align: center;">
               <p style="margin: 0; font-size: 18px; font-weight: 700; color: #059669;">03XX-XXXXXXX</p>
               <p style="margin: 5px 0 0 0; font-size: 14px; color: #6b7280;">JazzCash Account</p>
+              <p style="margin: 5px 0 0 0; font-size: 12px; color: #6b7280;">[Update with your actual JazzCash number]</p>
             </div>
             <ul style="margin: 10px 0; color: #92400e; padding-left: 20px; font-size: 14px;">
               <li>Send payment within 24 hours to confirm your order</li>
@@ -288,7 +144,6 @@ function generateFullEmailHTML(
             <h3 style="margin: 0 0 10px 0; color: #1e40af; font-size: 16px; font-weight: 600;">📍 Order Tracking</h3>
             <p style="margin: 10px 0; color: #1e40af;">As soon as your order is dispatched, you will receive your tracking ID via email and SMS.</p>
             <p style="margin: 10px 0; color: #1e40af;">Please continuously check your <strong>"My Orders"</strong> section on our website for continuous updates about your order status.</p>
-            <p style="margin: 10px 0; color: #1e40af;">Expected delivery: <strong>${estimatedDelivery}</strong></p>
             <p style="margin: 10px 0; color: #1e40af;">You can also contact us anytime for order updates and assistance.</p>
           </div>
 
@@ -296,7 +151,7 @@ function generateFullEmailHTML(
           <div style="text-align: center; margin: 30px 0;">
             <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px;">Need Help?</h3>
             <p style="margin: 8px 0; color: #6b7280;">
-              📧 Email: <a href="mailto:support@sufishine.com" style="color: #059669; text-decoration: none;">support@sufishine.com</a>
+              📧 Email: <a href="mailto:info.sufishine@gmail.com" style="color: #059669; text-decoration: none;">info.sufishine@gmail.com</a>
             </p>
             <p style="margin: 8px 0; color: #6b7280;">
               📱 WhatsApp: <a href="https://wa.me/923XXXXXXXXX" style="color: #059669; text-decoration: none;">+92 3XX-XXXXXXX</a>
@@ -336,97 +191,127 @@ function generateFullEmailHTML(
   `;
 }
 
-// For backward compatibility - alias to the main function
-export const sendOrderEmail = sendOrderConfirmationEmail;
+serve(async (req) => {
+  console.log("Function called with method:", req.method);
 
-// Send shipping notification email when admin marks order as shipped
-export const sendShippingNotificationEmail = async (
-  customerEmail: string,
-  orderData: OrderData & { trackingId: string }
-): Promise<EmailResult> => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
-    // Validate required inputs
-    if (!customerEmail || !orderData || !orderData.trackingId) {
-      return {
-        success: false,
-        error:
-          "Missing required parameters: customerEmail, orderData, or trackingId",
-      };
+    // Get environment variable
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("API Key present:", !!apiKey);
+    console.log("API Key length:", apiKey?.length || 0);
+
+    if (!apiKey) {
+      throw new Error(
+        "RESEND_API_KEY not configured in Supabase environment variables"
+      );
     }
 
-    // Call the Supabase Edge Function for shipping notifications
-    const { data, error } = await supabase.functions.invoke(
-      "send-shipping-notification",
-      {
-        body: {
-          customerEmail,
-          orderData,
-        },
-      }
+    // Validate API key format
+    if (!apiKey.startsWith("re_")) {
+      throw new Error(
+        'Invalid RESEND_API_KEY format - should start with "re_"'
+      );
+    }
+
+    // Parse request body
+    const body = await req.json();
+    console.log("Request body:", body);
+
+    const { customerEmail, orderData } = body;
+
+    // Validate required data
+    if (!customerEmail || !orderData) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Missing required fields: customerEmail and orderData",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Sending email to:", customerEmail);
+    console.log("Order number:", orderData.orderNumber);
+
+    // Generate email HTML
+    const emailHtml = generateOrderConfirmationHTML(orderData);
+
+    // Prepare email payload
+    const emailPayload = {
+      from: "SUFI SHINE <orders@sufishine.com>", // Use your verified domain
+      to: [customerEmail], // Send to actual customer
+      subject: `Order Confirmation #${orderData.orderNumber} - SUFI SHINE`,
+      html: emailHtml,
+    };
+
+    console.log("Email payload:", JSON.stringify(emailPayload, null, 2));
+    console.log("API Key length:", apiKey.length);
+    console.log("API Key starts with:", apiKey.substring(0, 8) + "...");
+
+    // Send email using Resend API
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(emailPayload),
+    });
+
+    console.log("Response status:", response.status);
+    console.log(
+      "Response headers:",
+      Object.fromEntries(response.headers.entries())
     );
 
-    if (error) {
-      return {
-        success: false,
-        error: `Shipping notification error: ${
-          error.message || JSON.stringify(error)
-        }`,
-      };
+    const result = await response.json();
+    console.log("Full Resend response:", JSON.stringify(result, null, 2));
+
+    if (!response.ok) {
+      console.error("Resend API failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        result: result,
+      });
+      throw new Error(
+        `Resend API error (${response.status}): ${
+          result.message || result.error || "Unknown error"
+        }`
+      );
     }
 
-    if (data && data.success) {
-      return {
+    console.log("Email sent successfully:", result);
+
+    return new Response(
+      JSON.stringify({
         success: true,
-        data: data.data,
-        message:
-          data.message || "Shipping notification email sent successfully",
-      };
-    } else {
-      return {
-        success: false,
-        error:
-          data?.error ||
-          "Unknown error from shipping notification Edge Function",
-      };
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: `Shipping notification service error: ${
-        error?.message || JSON.stringify(error)
-      }`,
-    };
-  }
-};
-
-// Test the email service connection
-export const testEmailServiceConnection = async (
-  testEmail: string
-): Promise<EmailResult> => {
-  const testOrderData: OrderData = {
-    orderNumber: `TEST-${Date.now()}`,
-    customerName: "Test Customer",
-    customerEmail: testEmail,
-    customerPhone: "+92 300 1234567",
-    items: [
+        data: result,
+        message: "Order confirmation email sent successfully",
+      }),
       {
-        id: "1",
-        name: "SUFI SHINE Hair Oil - Premium",
-        price: 1500,
-        quantity: 1,
-        image_url: "/src/assets/hair-oil-bottle.jpg",
-      },
-    ],
-    total: 1500,
-    paymentMethod: "COD",
-    shippingAddress: {
-      address: "123 Test Street",
-      city: "Karachi",
-      postalCode: "75500",
-      country: "Pakistan",
-    },
-    trackingId: "TRK-TEST-123456",
-  };
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("Error sending email:", error);
 
-  return await sendOrderConfirmationEmail(testEmail, testOrderData);
-};
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message || "Failed to send email",
+        stack: error.stack,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});

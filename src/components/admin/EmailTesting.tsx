@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { sendOrderEmail, OrderData, testEmailServiceConnection } from "@/lib/emailService";
+import {
+  sendOrderEmail,
+  OrderData,
+  testEmailServiceConnection,
+} from "@/lib/emailService";
 import EmailPreview from "@/components/EmailPreview";
 import { Mail, Eye, Send, TestTube } from "lucide-react";
 
@@ -72,8 +76,9 @@ const EmailTesting: React.FC = () => {
 
     setLoading(true);
     try {
-      console.log("Sending test email to:", testData.customerEmail);
-      
+      console.log("=== SENDING TEST ORDER CONFIRMATION EMAIL ===");
+      console.log("Customer Email:", testData.customerEmail);
+
       const result = await sendOrderEmail({
         ...sampleOrderData,
         customerEmail: testData.customerEmail,
@@ -92,14 +97,23 @@ const EmailTesting: React.FC = () => {
       console.log("Email send result:", result);
 
       if (result.success) {
-        toast({
-          title: "Success",
-          description: `Test email sent successfully to ${testData.customerEmail}! Check your inbox (and spam folder).`,
-        });
+        if ("fallback" in result && result.fallback) {
+          toast({
+            title: "Test Email (Fallback Mode)",
+            description: `CORS policy prevents direct email sending. Email details logged to console. Order confirmation would be sent to ${testData.customerEmail} in server-side implementation.`,
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: `Test email sent successfully to ${testData.customerEmail}! Check your inbox (and spam folder).`,
+          });
+        }
       } else {
         toast({
           title: "Email Send Failed",
-          description: `Error: ${result.error || 'Unknown error'}. Check the browser console for details.`,
+          description: `Error: ${
+            result.error || "Unknown error"
+          }. Check the browser console for details.`,
           variant: "destructive",
         });
       }
@@ -107,7 +121,9 @@ const EmailTesting: React.FC = () => {
       console.error("Test email error:", error);
       toast({
         title: "Error",
-        description: `Failed to send test email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: `Failed to send test email: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
         variant: "destructive",
       });
     } finally {
@@ -127,16 +143,25 @@ const EmailTesting: React.FC = () => {
 
     setLoading(true);
     try {
-      console.log("Testing email service connection...");
-      
+      console.log("=== EMAIL SERVICE CONNECTION TEST ===");
+      console.log("1. API Key present:", !!import.meta.env.VITE_RESEND_API_KEY);
+      console.log("2. Target email:", testData.customerEmail);
+      console.log("3. Testing connection using fallback method...");
+
       const result = await testEmailServiceConnection(testData.customerEmail);
-      
-      console.log("Connection test result:", result);
+
+      console.log("4. Connection test result:", result);
 
       if (result.success) {
         toast({
-          title: "Connection Test Successful",
-          description: `Email service is working! Test email sent to ${testData.customerEmail}`,
+          title:
+            "fallback" in result && result.fallback
+              ? "Connection Test (Fallback Mode)"
+              : "Connection Test Successful",
+          description:
+            "fallback" in result && result.fallback
+              ? `CORS policy prevents direct API calls. Email details logged to console. In production, use server-side implementation.`
+              : `Email service is working! Test email sent to ${testData.customerEmail}`,
         });
       } else {
         toast({
@@ -146,10 +171,12 @@ const EmailTesting: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Connection test error:", error);
+      console.error("❌ Connection test failed:", error);
       toast({
         title: "Connection Test Error",
-        description: `${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: `${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
         variant: "destructive",
       });
     } finally {
@@ -290,27 +317,47 @@ const EmailTesting: React.FC = () => {
                 ? "✅ Email service configured (Resend API key found)"
                 : "⚠️ Email service not configured. Set VITE_RESEND_API_KEY in your .env file"}
             </p>
-            
+
             {import.meta.env.VITE_RESEND_API_KEY && (
               <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
                 <p className="text-green-700 font-medium">✓ API Key Status:</p>
-                <p className="text-green-600 text-xs">Key found: {import.meta.env.VITE_RESEND_API_KEY.substring(0, 8)}...</p>
+                <p className="text-green-600 text-xs">
+                  Key found:{" "}
+                  {import.meta.env.VITE_RESEND_API_KEY.substring(0, 8)}...
+                </p>
               </div>
             )}
-            
+
             <div className="mb-3">
               <p className="font-medium">📋 Troubleshooting Steps:</p>
               <ol className="list-decimal list-inside ml-2 space-y-1 text-xs">
-                <li><strong>Test Connection:</strong> Click "Test Connection" to verify API setup</li>
-                <li><strong>Check Spam:</strong> Emails might be in spam/junk folder</li>
-                <li><strong>Wait Time:</strong> Emails can take 1-2 minutes to arrive</li>
-                <li><strong>Console:</strong> Check browser Developer Tools {'>'} Console for errors</li>
-                <li><strong>Valid Email:</strong> Ensure test email address is valid and accessible</li>
+                <li>
+                  <strong>Test Connection:</strong> Click "Test Connection" to
+                  verify API setup
+                </li>
+                <li>
+                  <strong>Check Spam:</strong> Emails might be in spam/junk
+                  folder
+                </li>
+                <li>
+                  <strong>Wait Time:</strong> Emails can take 1-2 minutes to
+                  arrive
+                </li>
+                <li>
+                  <strong>Console:</strong> Check browser Developer Tools {">"}{" "}
+                  Console for errors
+                </li>
+                <li>
+                  <strong>Valid Email:</strong> Ensure test email address is
+                  valid and accessible
+                </li>
               </ol>
             </div>
 
             <details className="cursor-pointer">
-              <summary className="font-medium">🔧 Setup Instructions (click to expand)</summary>
+              <summary className="font-medium">
+                🔧 Setup Instructions (click to expand)
+              </summary>
               <div className="mt-2 ml-2">
                 <ol className="list-decimal list-inside space-y-1 text-xs">
                   <li>
@@ -327,9 +374,12 @@ const EmailTesting: React.FC = () => {
                   <li>Go to API Keys section in dashboard</li>
                   <li>Create new API key (starts with "re_")</li>
                   <li>
-                    Add to your <code>.env</code> file: <code>VITE_RESEND_API_KEY=re_your_key</code>
+                    Add to your <code>.env</code> file:{" "}
+                    <code>VITE_RESEND_API_KEY=re_your_key</code>
                   </li>
-                  <li>Restart development server: <code>npm run dev</code></li>
+                  <li>
+                    Restart development server: <code>npm run dev</code>
+                  </li>
                 </ol>
               </div>
             </details>

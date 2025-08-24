@@ -68,13 +68,7 @@ export function Reviews({ productId }: ReviewsProps) {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("🚀 Review submission started");
-    console.log("User:", user ? "✅ Authenticated" : "❌ Not authenticated");
-    console.log("Product ID (original):", productId);
-    console.log("Product ID (for DB):", dbProductId);
-
     if (!user) {
-      console.log("❌ User not authenticated");
       toast({
         title: "Please sign in",
         description: "You need to be signed in to leave a review.",
@@ -84,7 +78,6 @@ export function Reviews({ productId }: ReviewsProps) {
     }
 
     if (!comment.trim()) {
-      console.log("❌ Comment is empty");
       toast({
         title: "Comment required",
         description: "Please write a comment for your review.",
@@ -94,7 +87,6 @@ export function Reviews({ productId }: ReviewsProps) {
     }
 
     if (!dbProductId) {
-      console.log("❌ No valid product ID for database");
       toast({
         title: "Product not found",
         description: "Unable to submit review for this product.",
@@ -113,19 +105,14 @@ export function Reviews({ productId }: ReviewsProps) {
         comment: comment.trim(),
       };
 
-      console.log("📝 Submitting review with data:", reviewData);
-
       const { data, error } = await supabase
         .from("reviews")
         .insert(reviewData)
         .select();
 
       if (error) {
-        console.error("💥 Supabase error:", error);
         throw error;
       }
-
-      console.log("✅ Review submitted successfully:", data);
 
       toast({
         title: "Review submitted",

@@ -29,7 +29,7 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react";
-import { sendOrderEmail, OrderData } from "@/lib/emailService";
+import { sendOrderConfirmationEmail, OrderData } from "@/lib/emailService";
 
 interface Error {
   message: string;
@@ -212,6 +212,10 @@ const Checkout: React.FC = (): JSX.Element => {
       existingOrders.push(orderData);
       localStorage.setItem("guestOrders", JSON.stringify(existingOrders));
 
+      // Initialize variables for database and email operations
+      let finalOrderNumber = orderData.orderId;
+      let dbInsertSuccess = false;
+
       // Save order to the new guest_orders table
       try {
         // Generate a readable order number
@@ -256,6 +260,7 @@ const Checkout: React.FC = (): JSX.Element => {
           .single();
 
         if (insertError) {
+          console.error("Database insert error:", insertError);
           // Still proceed with success since localStorage worked
           toast({
             title: "Note",
@@ -265,7 +270,9 @@ const Checkout: React.FC = (): JSX.Element => {
           });
         } else {
           // Update the orderId to use the database-generated ID for consistency
+          finalOrderNumber = insertResult.order_number;
           orderData.orderId = insertResult.order_number;
+          dbInsertSuccess = true;
         }
       } catch (dbError) {
         // Still proceed with success since localStorage worked
@@ -277,11 +284,11 @@ const Checkout: React.FC = (): JSX.Element => {
         });
       }
 
-      // Send order confirmation email
+      // Send order confirmation email automatically
       try {
         const emailOrderData: OrderData = {
-          orderId: orderData.orderId,
-          orderNumber: orderData.orderId, // Using orderId as order number for now
+          orderId: finalOrderNumber,
+          orderNumber: finalOrderNumber,
           customerName: `${data.firstName} ${data.lastName}`,
           customerEmail: data.email,
           customerPhone: data.phone,
@@ -298,20 +305,40 @@ const Checkout: React.FC = (): JSX.Element => {
           paymentMethod: data.paymentMethod,
           shippingAddress: delivery_address,
           estimatedDelivery: "3-5 business days",
+          trackingNumber: `TRK-${finalOrderNumber}`, // Generate tracking number
         };
 
-        const emailResult = await sendOrderEmail(emailOrderData);
+        const emailResult = await sendOrderConfirmationEmail(
+          data.email,
+          emailOrderData
+        );
 
         if (emailResult.success) {
-          console.log("Order confirmation email sent successfully");
+          // Show success message to user if email was sent
+          if (!emailResult.fallback) {
+            toast({
+              title: "Email Confirmation Sent!",
+              description: `Order details have been sent to ${data.email}`,
+              duration: 5000,
+            });
+          }
         } else {
-          console.log(
-            "Email sending failed, but order was placed successfully"
-          );
+          // Optionally show user that email failed but order succeeded
+          toast({
+            title: "Order Placed Successfully",
+            description:
+              "Your order was placed but email confirmation may be delayed. Please save your order number.",
+            duration: 6000,
+          });
         }
       } catch (emailError) {
-        console.error("Error sending confirmation email:", emailError);
-        // Don't show error to user as order was placed successfully
+        // Don't fail the order if email fails - just log and continue
+        toast({
+          title: "Order Placed Successfully",
+          description:
+            "Your order was placed successfully. Email confirmation may be delayed.",
+          duration: 6000,
+        });
       }
 
       // Show payment instructions for specific payment methods
@@ -346,14 +373,14 @@ const Checkout: React.FC = (): JSX.Element => {
 
       toast({
         title: "Order Placed Successfully!",
-        description: `Your order #${orderId} has been placed. ${
+        description: `Your order #${finalOrderNumber} has been placed. ${
           data.paymentMethod === "cash_on_delivery"
             ? "You will pay on delivery."
             : "Please complete the payment using the provided details."
         }${
           !user
             ? " Since you're not signed in, save this order ID for tracking: " +
-              orderId
+              finalOrderNumber
             : ""
         }`,
         duration: 8000,
@@ -375,8 +402,11 @@ const Checkout: React.FC = (): JSX.Element => {
         }, 3000);
         navigate("/shop");
       }
+
+      console.log(
+        "🔍 CHECKOUT DEBUG: All order processing completed successfully"
+      );
     } catch (error: unknown) {
-      console.error("Error placing order:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
