@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react";
+import { sendOrderEmail, OrderData } from "@/lib/emailService";
 
 interface Error {
   message: string;
@@ -274,6 +275,41 @@ const Checkout: React.FC = (): JSX.Element => {
             "Order placed successfully but may not appear in admin panel immediately. Please contact support.",
           duration: 8000,
         });
+      }
+
+      // Send order confirmation email
+      try {
+        const emailOrderData: OrderData = {
+          orderId: orderData.orderId,
+          orderNumber: orderData.orderId, // Using orderId as order number for now
+          customerName: `${data.firstName} ${data.lastName}`,
+          customerEmail: data.email,
+          customerPhone: data.phone,
+          items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image_url: item.image_url,
+          })),
+          subtotal: getCartTotal(),
+          shippingCharge: getShippingCharge(data.paymentMethod),
+          total: getCartTotalWithShipping(data.paymentMethod),
+          paymentMethod: data.paymentMethod,
+          shippingAddress: delivery_address,
+          estimatedDelivery: '3-5 business days',
+        };
+
+        const emailResult = await sendOrderEmail(emailOrderData);
+        
+        if (emailResult.success) {
+          console.log('Order confirmation email sent successfully');
+        } else {
+          console.log('Email sending failed, but order was placed successfully');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't show error to user as order was placed successfully
       }
 
       // Show payment instructions for specific payment methods

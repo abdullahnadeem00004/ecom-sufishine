@@ -28,6 +28,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import EmailTesting from "@/components/admin/EmailTesting";
 
 interface StoreSettings {
   name: string;
@@ -160,10 +161,14 @@ const Settings = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="store" className="flex items-center space-x-2">
             <Store className="h-4 w-4" />
             <span>Store</span>
+          </TabsTrigger>
+          <TabsTrigger value="email" className="flex items-center space-x-2">
+            <Mail className="h-4 w-4" />
+            <span>Email</span>
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
@@ -358,6 +363,21 @@ const Settings = () => {
                   {loading ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Email Settings */}
+        <TabsContent value="email" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Mail className="mr-2 h-5 w-5" />
+                Email System Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EmailTesting />
             </CardContent>
           </Card>
         </TabsContent>
