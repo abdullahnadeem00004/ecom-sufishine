@@ -1,9 +1,11 @@
 # Email System Documentation
 
 ## Overview
+
 The SUFI SHINE e-commerce platform now includes an automated email system that sends order confirmation emails to customers when they place orders.
 
 ## Features
+
 - ✅ **Automated Order Confirmations**: Emails sent automatically after successful order placement
 - ✅ **Beautiful HTML Templates**: Professional, responsive email templates with SUFI SHINE branding
 - ✅ **Order Details**: Complete order information including items, pricing, and shipping details
@@ -16,12 +18,14 @@ The SUFI SHINE e-commerce platform now includes an automated email system that s
 ## Email Services Supported
 
 ### Primary: Resend (Recommended)
+
 - **Service**: [Resend](https://resend.com)
 - **Cost**: Free tier includes 3,000 emails/month
 - **Setup**: Create account, get API key, set `VITE_RESEND_API_KEY` environment variable
 - **Features**: Reliable delivery, detailed analytics, easy integration
 
 ### Alternative Options
+
 - **Supabase Edge Functions**: Can be implemented for custom email handling
 - **SendGrid**: Popular email service (requires code modification)
 - **Nodemailer with SMTP**: Traditional email sending (requires backend modification)
@@ -31,16 +35,19 @@ The SUFI SHINE e-commerce platform now includes an automated email system that s
 ### 1. Email Service Configuration (Resend)
 
 1. **Create Resend Account**:
+
    - Visit [https://resend.com](https://resend.com)
    - Sign up for a free account
    - Verify your email address
 
 2. **Get API Key**:
+
    - Go to API Keys in the dashboard
    - Create a new API key
    - Copy the API key (starts with `re_`)
 
 3. **Configure Environment Variables**:
+
    ```bash
    # Create or update .env file in project root
    VITE_RESEND_API_KEY=re_your_api_key_here
@@ -56,6 +63,7 @@ The SUFI SHINE e-commerce platform now includes an automated email system that s
 For production use, configure a custom domain:
 
 1. **Add Domain in Resend**:
+
    - Go to Domains section in Resend dashboard
    - Add your domain (e.g., `sufishine.com`)
    - Follow DNS configuration instructions
@@ -83,6 +91,7 @@ src/
 ## Email Template Content
 
 ### Order Confirmation Email Includes:
+
 - **Header**: SUFI SHINE branding and order confirmation message
 - **Order Details**: Order number, date, estimated delivery
 - **Items List**: Product names, quantities, and prices
@@ -94,14 +103,16 @@ src/
 - **Footer**: Company information and social media links
 
 ### Payment Method Specific Instructions:
+
 - **Cash on Delivery**: Confirmation of COD payment
 - **JazzCash**: Account details and payment instructions
-- **EasyPaisa**: Account details and payment instructions  
+- **EasyPaisa**: Account details and payment instructions
 - **Bank Transfer**: IBAN and account information
 
 ## Testing the Email System
 
 ### Using Admin Panel:
+
 1. Navigate to **Admin Dashboard** > **Settings** > **Email** tab
 2. Fill in test customer information
 3. Click **Preview Email** to see how the email looks
@@ -109,6 +120,7 @@ src/
 5. Check the recipient's email inbox
 
 ### Manual Testing:
+
 1. Place a test order through the checkout process
 2. Complete the order successfully
 3. Check the customer email address used in checkout
@@ -119,16 +131,19 @@ src/
 ### Common Issues:
 
 1. **Email Not Configured Error**:
+
    - Check if `VITE_RESEND_API_KEY` is set in `.env` file
    - Restart development server after adding environment variable
    - Verify API key is correct and active
 
 2. **Emails Not Being Sent**:
+
    - Check browser developer console for error messages
    - Verify Resend API key has sending permissions
    - Check Resend dashboard for send logs and errors
 
 3. **Emails Going to Spam**:
+
    - Configure custom domain in Resend (recommended)
    - Set up SPF, DKIM, and DMARC records
    - Use verified sender addresses
@@ -148,11 +163,13 @@ src/
 ## API Rate Limits
 
 ### Resend Free Tier:
+
 - **3,000 emails/month**
 - **100 emails/day**
 - **10 emails/second**
 
 ### Paid Plans:
+
 - Higher limits available
 - Custom domains included
 - Advanced analytics
@@ -161,6 +178,7 @@ src/
 ## Future Enhancements
 
 ### Potential Improvements:
+
 - **Order Status Updates**: Send emails when order status changes
 - **Shipping Notifications**: Email when order ships with tracking info
 - **Delivery Confirmations**: Email when order is delivered
@@ -170,6 +188,7 @@ src/
 - **SMS Integration**: Text message notifications in addition to email
 
 ### Technical Enhancements:
+
 - **Background Jobs**: Use job queues for email sending
 - **Email Analytics**: Track open rates, click rates, etc.
 - **A/B Testing**: Test different email templates
@@ -187,10 +206,11 @@ src/
 ## Support and Contact
 
 For technical support or questions about the email system:
+
 - **Developer**: Check code comments and console logs
 - **Resend Support**: Use Resend documentation and support
 - **SUFI SHINE Support**: Contact development team
 
 ---
 
-*Last updated: August 24, 2025*
+_Last updated: August 24, 2025_

@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
 // Email service configuration
 const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
@@ -42,20 +42,23 @@ const generateOrderConfirmationEmail = (orderData: OrderData) => {
     total,
     paymentMethod,
     shippingAddress,
-    estimatedDelivery = '3-5 business days',
+    estimatedDelivery = "3-5 business days",
   } = orderData;
 
   const paymentMethodNames = {
-    cash_on_delivery: 'Cash on Delivery',
-    jazzcash: 'JazzCash',
-    easypaisa: 'EasyPaisa',
-    bank_account: 'Bank Transfer',
+    cash_on_delivery: "Cash on Delivery",
+    jazzcash: "JazzCash",
+    easypaisa: "EasyPaisa",
+    bank_account: "Bank Transfer",
   };
 
   const paymentInstructions = {
-    jazzcash: 'Please make payment to JazzCash account: 03041146524, Account Title: LUQMAN BIN RIZWAN',
-    easypaisa: 'Please make payment to EasyPaisa account: 03391146524, Account Title: LUQMAN BIN RIZWAN',
-    bank_account: 'Please transfer to IBAN PK68ALFH033100101005004 (Account Title: SUFI SHINE, Acc No: 03311010050044)',
+    jazzcash:
+      "Please make payment to JazzCash account: 03041146524, Account Title: LUQMAN BIN RIZWAN",
+    easypaisa:
+      "Please make payment to EasyPaisa account: 03391146524, Account Title: LUQMAN BIN RIZWAN",
+    bank_account:
+      "Please transfer to IBAN PK68ALFH033100101005004 (Account Title: SUFI SHINE, Acc No: 03311010050044)",
   };
 
   return `
@@ -97,7 +100,9 @@ const generateOrderConfirmationEmail = (orderData: OrderData) => {
               <p><strong>Estimated Delivery:</strong> ${estimatedDelivery}</p>
               
               <h3>Items Ordered:</h3>
-              ${items.map(item => `
+              ${items
+                .map(
+                  (item) => `
                 <div class="item">
                   <div>
                     <strong>${item.name}</strong><br>
@@ -105,7 +110,9 @@ const generateOrderConfirmationEmail = (orderData: OrderData) => {
                   </div>
                   <div>PKR ${(item.price * item.quantity).toFixed(2)}</div>
                 </div>
-              `).join('')}
+              `
+                )
+                .join("")}
               
               <div class="item">
                 <div>Subtotal:</div>
@@ -114,7 +121,11 @@ const generateOrderConfirmationEmail = (orderData: OrderData) => {
               
               <div class="item">
                 <div>Shipping:</div>
-                <div>${shippingCharge === 0 ? 'FREE' : `PKR ${shippingCharge.toFixed(2)}`}</div>
+                <div>${
+                  shippingCharge === 0
+                    ? "FREE"
+                    : `PKR ${shippingCharge.toFixed(2)}`
+                }</div>
               </div>
               
               <div class="item total-row">
@@ -134,17 +145,29 @@ const generateOrderConfirmationEmail = (orderData: OrderData) => {
 
             <div class="order-details">
               <h3>Payment Information</h3>
-              <p><strong>Payment Method:</strong> ${paymentMethodNames[paymentMethod as keyof typeof paymentMethodNames] || paymentMethod}</p>
+              <p><strong>Payment Method:</strong> ${
+                paymentMethodNames[
+                  paymentMethod as keyof typeof paymentMethodNames
+                ] || paymentMethod
+              }</p>
               
-              ${paymentMethod !== 'cash_on_delivery' ? `
+              ${
+                paymentMethod !== "cash_on_delivery"
+                  ? `
                 <div class="payment-info">
                   <h4>Payment Instructions:</h4>
-                  <p>${paymentInstructions[paymentMethod as keyof typeof paymentInstructions]}</p>
+                  <p>${
+                    paymentInstructions[
+                      paymentMethod as keyof typeof paymentInstructions
+                    ]
+                  }</p>
                   <p><strong>Important:</strong> Please include your order number <strong>${orderNumber}</strong> in the payment reference.</p>
                 </div>
-              ` : `
+              `
+                  : `
                 <p style="color: #059669;">✓ You will pay when your order is delivered.</p>
-              `}
+              `
+              }
             </div>
 
             <div class="order-details">
@@ -187,23 +210,40 @@ export const sendOrderConfirmationEmail = async (orderData: OrderData) => {
   try {
     // Check if API key is configured
     if (!import.meta.env.VITE_RESEND_API_KEY) {
-      console.warn('Email service not configured. Order confirmation email not sent.');
-      return { success: false, error: 'Email service not configured' };
+      console.warn(
+        "Email service not configured. Order confirmation email not sent."
+      );
+      return { success: false, error: "Email service not configured" };
     }
+
+    console.log("Attempting to send email with Resend API...");
+    console.log("API Key present:", !!import.meta.env.VITE_RESEND_API_KEY);
+    console.log("To:", orderData.customerEmail);
 
     const htmlContent = generateOrderConfirmationEmail(orderData);
 
+    // Use a verified sender email for Resend
+    // For testing, use the default Resend domain or your verified domain
+    const fromEmail = "onboarding@resend.dev"; // Default Resend testing email
+    
     const result = await resend.emails.send({
-      from: 'SUFI SHINE <orders@sufishine.com>',
+      from: `SUFI SHINE <${fromEmail}>`,
       to: [orderData.customerEmail],
       subject: `Order Confirmation - ${orderData.orderNumber} | SUFI SHINE`,
       html: htmlContent,
     });
 
-    console.log('Order confirmation email sent successfully:', result);
+    console.log("Order confirmation email sent successfully:", result);
     return { success: true, data: result };
   } catch (error) {
-    console.error('Failed to send order confirmation email:', error);
+    console.error("Failed to send order confirmation email:", error);
+    
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
     return { success: false, error: error };
   }
 };
@@ -214,15 +254,18 @@ export const sendEmailViaSupabase = async (orderData: OrderData) => {
     // This would call a Supabase Edge Function
     // For now, we'll just log the email content
     const htmlContent = generateOrderConfirmationEmail(orderData);
-    
-    console.log('Email would be sent via Supabase Edge Function:');
-    console.log('To:', orderData.customerEmail);
-    console.log('Subject:', `Order Confirmation - ${orderData.orderNumber} | SUFI SHINE`);
-    console.log('HTML Content length:', htmlContent.length);
-    
+
+    console.log("Email would be sent via Supabase Edge Function:");
+    console.log("To:", orderData.customerEmail);
+    console.log(
+      "Subject:",
+      `Order Confirmation - ${orderData.orderNumber} | SUFI SHINE`
+    );
+    console.log("HTML Content length:", htmlContent.length);
+
     return { success: true, fallback: true };
   } catch (error) {
-    console.error('Failed to send email via Supabase:', error);
+    console.error("Failed to send email via Supabase:", error);
     return { success: false, error: error };
   }
 };
@@ -231,14 +274,66 @@ export const sendEmailViaSupabase = async (orderData: OrderData) => {
 export const sendOrderEmail = async (orderData: OrderData) => {
   // Try primary email service first
   const primaryResult = await sendOrderConfirmationEmail(orderData);
-  
+
   if (primaryResult.success) {
     return primaryResult;
   }
-  
+
   // Fallback to alternative method
-  console.log('Primary email service failed, trying fallback...');
+  console.log("Primary email service failed, trying fallback...");
   const fallbackResult = await sendEmailViaSupabase(orderData);
-  
+
   return fallbackResult;
+};
+
+// Diagnostic function to test email service configuration
+export const testEmailServiceConnection = async (testEmail: string) => {
+  try {
+    if (!import.meta.env.VITE_RESEND_API_KEY) {
+      return { 
+        success: false, 
+        error: "VITE_RESEND_API_KEY not configured in environment variables" 
+      };
+    }
+
+    console.log("Testing Resend API connection...");
+    console.log("API Key (first 10 chars):", import.meta.env.VITE_RESEND_API_KEY.substring(0, 10) + "...");
+
+    const result = await resend.emails.send({
+      from: "SUFI SHINE <onboarding@resend.dev>", // Using Resend's default testing domain
+      to: [testEmail],
+      subject: "SUFI SHINE - Email Service Test",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
+          <h1 style="color: #059669;">Email Service Test - SUFI SHINE</h1>
+          <p>This is a test email to verify that the email service is working correctly.</p>
+          <div style="background: #f0f9f7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3>Test Details:</h3>
+            <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+            <p><strong>Service:</strong> Resend API</p>
+            <p><strong>Status:</strong> ✅ Email service is working!</p>
+          </div>
+          <p>If you received this email, the SUFI SHINE email system is configured correctly.</p>
+          <hr>
+          <p style="font-size: 12px; color: #666;">This is an automated test message from SUFI SHINE email system.</p>
+        </div>
+      `,
+    });
+
+    console.log("Test email sent successfully:", result);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Email service test failed:", error);
+    
+    let errorMessage = "Unknown error occurred";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      console.error("Detailed error:", {
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+    
+    return { success: false, error: errorMessage };
+  }
 };
